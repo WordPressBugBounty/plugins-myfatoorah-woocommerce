@@ -64,7 +64,8 @@ class WC_Shipping_Myfatoorah extends WC_Shipping_Method {
         $this->lang = substr(determine_locale(), 0, 2);
         $countries  = MyFatoorah::getMFCountries();
         if (is_array($countries)) {
-            $nameIndex = 'countryName' . ucfirst($this->lang);
+            $langIndex = ($this->lang == 'ar')? 'Ar' : 'En';
+            $nameIndex = 'countryName' . $langIndex;
             foreach ($countries as $key => $obj) {
                 $this->mfCountries[$key] = $obj[$nameIndex];
             }

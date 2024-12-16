@@ -9,7 +9,7 @@
  * Plugin Name:       MyFatoorah - WooCommerce
  * Plugin URI:        https://myfatoorah.readme.io/docs/woocommerce/
  * Description:       MyFatoorah Payment Gateway for WooCommerce. Integrated with MyFatoorah DHL/Aramex Shipping Methods.
- * Version:           2.2.7
+ * Version:           2.2.8
  * Author:            MyFatoorah
  * Author URI:        https://www.myfatoorah.com/
  * License:           GNU General Public License v3.0
@@ -17,13 +17,13 @@
  * Text Domain:       myfatoorah-woocommerce
  * Domain Path:       /languages
  * 
- * Requires at least: 5.6
- * Tested up to: 6.4
+ * Requires at least: 5.9
+ * Tested up to: 6.7
  * 
  * Requires PHP: 7.4
  *
- * WC requires at least: 5.3
- * WC tested up to: 8.7
+ * WC requires at least: 7.3
+ * WC tested up to: 9.4
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -33,9 +33,11 @@ if (!defined('WPINC')) {
 }
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
+use MyFatoorah\WooCommerce\Payments\Blocks\MyFatoorahV2;
 
 //MFWOO_PLUGIN
-define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.7');
+define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.8');
 define('MYFATOORAH_WOO_PLUGIN', plugin_basename(__FILE__));
 define('MYFATOORAH_WOO_PLUGIN_NAME', dirname(MYFATOORAH_WOO_PLUGIN));
 define('MYFATOORAH_WOO_PLUGIN_PATH', plugin_dir_path(__FILE__));
@@ -50,10 +52,15 @@ class MyfatoorahWoocommerce {
 //-----------------------------------------------------------------------------------------------------------------------------
 
     /**
+     * Static property to hold our singleton instance
+     *
+     */
+    static $instance = false;
+
+    /**
      * Constructor
      */
     public function __construct() {
-
         add_filter('plugin_row_meta', array($this, 'plugin_row_meta'), 10, 2);
 
         //actions
@@ -65,6 +72,23 @@ class MyfatoorahWoocommerce {
         //to show that MyFatoorah is supported with the woo features
         //http://wordpress-6.2.2.com/wp-admin/plugins.php?plugin_status=incompatible_with_feature
         add_action('before_woocommerce_init', [$this, 'before_woocommerce_init']);
+
+        //Bloks
+        add_action('woocommerce_blocks_loaded', [$this, 'woocommerce_blocks_loaded']);
+    }
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * If an instance exists, this returns it. If not, it creates one and returns it.
+     *
+     * @return self object
+     */
+    public static function getInstance() {
+        if (!self::$instance) {
+            self::$instance = new self;
+        }
+        return self::$instance;
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -78,7 +102,6 @@ class MyfatoorahWoocommerce {
      * @return array
      */
     public static function plugin_row_meta($links, $file) {
-
         if (MYFATOORAH_WOO_PLUGIN === $file) {
             $row_meta = array(
                 'docs'    => '<a href="' . esc_url('https://myfatoorah.readme.io/docs/woocommerce') . '" aria-label="' . esc_attr__('View MyFatoorah documentation', 'myfatoorah-woocommerce') . '">' . esc_html__('Docs', 'woocommerce') . '</a>',
@@ -95,7 +118,6 @@ class MyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function activate_plugin($plugin) {
-
         // Localisation
         $this->updateTransFile();
 
@@ -119,7 +141,6 @@ class MyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function upgrader_process_complete($upgraderObject, $options) {
-
         // If an update has taken place and the updated type is plugins and the plugins element exists
         if ($options['action'] == 'update' && $options['type'] == 'plugin' && isset($options['plugins'])) {
             foreach ($options['plugins'] as $plugin) {
@@ -160,10 +181,7 @@ class MyfatoorahWoocommerce {
      * Init localizations and files
      */
     public function init() {
-        // Localisation
-        load_plugin_textdomain('myfatoorah-woocommerce', false, MYFATOORAH_WOO_PLUGIN_NAME . '/languages');
-
-        if (!class_exists('WooCommerce')) {
+	if (!class_exists('WooCommerce')) {
             add_action('admin_notices', [$this, 'admin_notices']);
             return;
         }
@@ -181,6 +199,9 @@ class MyfatoorahWoocommerce {
         require_once 'includes/PluginWebhookMyfatoorahWoocommerce.php';
         new PluginWebhookMyfatoorahWoocommerce();
 
+	// Localisation
+        load_plugin_textdomain('myfatoorah-woocommerce', false, MYFATOORAH_WOO_PLUGIN_NAME . '/languages');
+        
         //load cron
         //https://www.codesmade.com/wordpress-add-cron-job-programmatically/
         add_action('myfatoorah_backup_log_files', [$this, 'myfatoorah_backup_log_files']);
@@ -197,7 +218,6 @@ class MyfatoorahWoocommerce {
      * @param type $response
      */
     function prefix_plugin_update_message($data, $response) {
-
         $notice = null;
         if (!empty($data['upgrade_notice'])) {
             $notice = trim(strip_tags($data['upgrade_notice']));
@@ -216,7 +236,6 @@ class MyfatoorahWoocommerce {
 
     //-----------------------------------------------------------------------------------------------------------------------------
     function myfatoorah_backup_log_files() {
-
         $codes   = array_keys(apply_filters('myfatoorah_woocommerce_payment_gateways', []));
         $codes[] = 'shipping';
         $codes[] = 'webHook';
@@ -227,7 +246,6 @@ class MyfatoorahWoocommerce {
     }
 
     function myfatoorah_backup_log_file($code) {
-
         $myfatoorahLogFile = WC_LOG_DIR . 'myfatoorah_' . $code . '.log';
         if (file_exists($myfatoorahLogFile)) {
             $mfLogFolder = WC_LOG_DIR . 'mfOldLog';
@@ -246,7 +264,6 @@ class MyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function before_woocommerce_init() {
-
         if (class_exists(FeaturesUtil::class)) {
             //to remove mf from feature_id=custom_order_tables list
             //to disable waring message for High-Performance Order Storage features
@@ -261,11 +278,25 @@ class MyfatoorahWoocommerce {
             //follow instruction here b4 enable it
             //https://developer.woo.com/2023/11/06/faq-extending-cart-and-checkout-blocks/
             //https://github.com/woocommerce/woocommerce-blocks/blob/trunk/docs/third-party-developers/extensibility/checkout-payment-methods/payment-method-integration.md#registering-assets
-            //FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
+            FeaturesUtil::declare_compatibility('cart_checkout_blocks', __FILE__, true);
+        }
+    }
+
+    function woocommerce_blocks_loaded() {
+        if (class_exists('Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType')) {
+            require_once dirname(__FILE__) . '/includes/payments/blocks/MyFatoorahV2.php';
+            add_action(
+                    'woocommerce_blocks_payment_method_type_registration',
+                    function (PaymentMethodRegistry $payment_method_registry) {
+                        $payment_method_registry->register(new MyFatoorahV2());
+                    }
+            );
         }
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 }
 
-new MyfatoorahWoocommerce();
+// Instantiate our class
+//new MyfatoorahWoocommerce();
+MyfatoorahWoocommerce::getInstance();

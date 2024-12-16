@@ -173,6 +173,7 @@ return [
     'newDesign'        => array(
         'title'   => __('New Design', 'myfatoorah-woocommerce'),
         'type'    => 'checkbox',
+        'description' => '<font color="red"><span class="dashicon dashicons dashicons-remove"></span>' . __('Old Design is deprecated and it will be removed soon.', 'myfatoorah-woocommerce') . '</font>',
         'default' => 'yes',
         'label'   => __('Enable New Design', 'myfatoorah-woocommerce'),
     ),

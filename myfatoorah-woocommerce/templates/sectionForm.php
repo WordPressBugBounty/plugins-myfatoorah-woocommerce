@@ -1,5 +1,5 @@
 <?php
-$height    = ($this->saveCard == 'yes' && get_current_user_id()) ? 190 : 130;
+$height    = ($this->saveCard == 'yes' && get_current_user_id()) ? 160 : 130;
 $direction = ($this->lang == 'ar') ? 'rtl' : '';
 
 $cardHolder = __('Name On Card', 'myfatoorah-woocommerce');
@@ -16,6 +16,7 @@ $hideCardIcons = ($this->cardIcons === 'yes') ? 'true' : 'false';
             countryCode: "<?php echo $this->session->CountryCode; ?>",
             sessionId: "<?php echo $this->session->SessionId; ?>",
             cardViewId: "mf-form-element",
+
             // The following style is optional.
             style: {
                 hideCardIcons: <?php echo $hideCardIcons; ?>,
@@ -66,7 +67,7 @@ $hideCardIcons = ($this->cardIcons === 'yes') ? 'true' : 'false';
         });
 
         $('.mf-pay-now-btn').on('click', function (e) {
-            if ($('#payment_method_myfatoorah_v2').is(':checked')) {
+            if ($('#payment_method_myfatoorah_<?php echo $this->code; ?>').is(':checked')) {
                 MFPayNow(e);
             }
         });
@@ -83,7 +84,7 @@ $hideCardIcons = ($this->cardIcons === 'yes') ? 'true' : 'false';
                 }
             });
 
-            myFatoorah.submit().then(
+            myFatoorah.submit("<?php echo get_woocommerce_currency(); ?>").then(
                     function (response) {
                         // On success
                         $(mfWooForm).unblock(); //important to stop the block on the form

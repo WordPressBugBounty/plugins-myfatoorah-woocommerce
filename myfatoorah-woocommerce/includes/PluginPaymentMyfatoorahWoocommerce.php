@@ -43,7 +43,7 @@ class PluginPaymentMyfatoorahWoocommerce {
         } else {
             //select diff country with no other shipping methods
             $payment_method = MyFatoorah::filterInputField('payment_method', 'POST');
-            if (str_contains($payment_method, 'myfatoorah_')) {
+            if ($payment_method && str_contains($payment_method, 'myfatoorah_')) {
                 return 3;
             }
         }
@@ -143,9 +143,12 @@ class PluginPaymentMyfatoorahWoocommerce {
         if ($gateway->fail_url) {
             wp_redirect($gateway->fail_url . '?error=' . urlencode($error));
         } else {
-            wc_add_notice($error, 'error');
+            $trError = __($error, 'myfatoorah-woocommerce');
+            wc_add_notice($trError, 'error');
             if ($isPayForOrderPage == 'true') {
                 wp_redirect($order->get_checkout_payment_url());
+            } else if (WC_Blocks_Utils::has_block_in_page(wc_get_page_id('checkout'), 'woocommerce/checkout')) {
+                wp_redirect(wc_get_cart_url());
             } else {
                 wp_redirect(wc_get_checkout_url());
             }

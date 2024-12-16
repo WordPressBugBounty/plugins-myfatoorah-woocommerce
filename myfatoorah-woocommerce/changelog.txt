@@ -2,6 +2,31 @@
 
 This file will contains only old changelog. See readme.txt for newer versions.
 
+= 2.2.7 (2024-03-27) =
+- Refund via MyFatoorah API
+- Change the payment.php to an abstract payment plugin.
+- Move the payment.php, shipping.php, and webhook.php to the "include" folder as plugin classes.
+- Add a new filter to register any new MyFatoorah WooComerce payment as a gateway.
+- Validate the config data with all MyFatoorah payments.
+- Fix the "disable shipping" functionality and let it detect all registered MyFatoorah WooComerce payments using the new filter.
+- Disable shipping if the payment gateways are disabled from the admin payment list.
+- Show only the selected countries in the MyFatoorah Shipping settings for the "Exclude countries from shipping rates" option.
+- Fix Shipping calculation
+- Validate the payment logo link to use HTTPS instead of HTTP.
+- Check each product price to see if it is a number.
+- Change each class-wc-gateway-myfatoorah-XXX to be independent of each other. If no apiKey is set, use the v2Option data.
+- Add a new action for the webhook registration so that a new event handler can be added easily without editing the original code.
+- Add webhook logger file
+- Move the translations from i18n to the languages folder to be able to use WordPress tools for packing the plugin. 
+- Update the translation file after upgrading the plugin.
+- Remove the wp-die function if the WooComerce plugin is not installed or active, and use the admin notice instead. No gateways will be registered until the WooComerce is installed and active. 
+- Add the log backup cron job to backup log files every week.
+- Allow enabling the MyFatoorah Embedded payment if MyFatoorah Cards payment redirects buyers to the invoice page.
+- Add notice for MyFatoorah Embedded payment when disabled.
+- Fix Apple Pay registration
+- Fix the thousand-separator view of the Apple Pay button
+- Translate currencies on the checkout page
+
 = 2.2.6 (2023-10-23) =
 Fix compatibility with the WoodMart theme.
 Fix compatibility with the custom order tables in the WooCommerce feature.

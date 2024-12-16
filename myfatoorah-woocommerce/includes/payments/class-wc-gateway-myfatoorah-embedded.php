@@ -28,8 +28,9 @@ class WC_Gateway_Myfatoorah_embedded extends WC_Gateway_Myfatoorah {
         __('Embedded', 'myfatoorah-woocommerce');
 
         /* translators: %s: version number */
-        $this->method_description = sprintf(__('MyFatoorah Embedded payment version %s.', 'myfatoorah-woocommerce'), MYFATOORAH_WOO_PLUGIN_VERSION);
-        $this->method_title       = __('MyFatoorah - Embedded', 'myfatoorah-woocommerce');
+//        $this->method_description = sprintf(__('MyFatoorah Embedded payment version %s.', 'myfatoorah-woocommerce'), MYFATOORAH_WOO_PLUGIN_VERSION);
+        $this->method_description = '<font color=red>' . __('Deprecated and it will be removed soon, use MyFatoorah Card New Design', 'myfatoorah-woocommerce') . '</font>';
+        $this->method_title = __('MyFatoorah - Embedded', 'myfatoorah-woocommerce');
 
         parent::__construct();
 
@@ -124,8 +125,8 @@ class WC_Gateway_Myfatoorah_embedded extends WC_Gateway_Myfatoorah {
     /**
      * Don't enable this payment, if there is no API key in "MyFatoorah - Cards" payment settings or newDesign is enabled
      * 
-     * @param type $key
-     * @param type $value
+     * @param string $key
+     * @param string $value
      * 
      * @return string
      */

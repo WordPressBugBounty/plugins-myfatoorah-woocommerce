@@ -113,7 +113,7 @@ $txtOr = __('Or ', 'myfatoorah-woocommerce');
         <?php
         include_once('sectionForm.php');
         ?>
-        <button class="mf-btn mf-pay-now-btn" type="button" style="background-color:<?php echo $this->themeColor; ?>;
+        <button class="mf-pay-now-btn" type="button" style="background-color:<?php echo $this->themeColor; ?>;
                 border: none; border-radius: 8px;
                 padding: 7px 3px;">
             <span class="mf-pay-now-span" style='font-size:<?php echo $this->designFontSize; ?>px; font-family:<?php echo $this->designFont; ?>;'>

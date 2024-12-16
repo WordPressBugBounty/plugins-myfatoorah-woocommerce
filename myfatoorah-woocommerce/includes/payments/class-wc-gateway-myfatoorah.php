@@ -7,6 +7,9 @@
  *
  * @extends     WC_Payment_Gateway
  */
+require_once MYFATOORAH_WOO_PLUGIN_PATH . 'includes/libraries/MyfatoorahLoader.php';
+require_once MYFATOORAH_WOO_PLUGIN_PATH . 'includes/libraries/MyfatoorahLibrary.php';
+
 class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -15,13 +18,18 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
     public $lang;
     public $pluginlog;
     public $mfCountries      = [];
+    public $gateways         = [];
     public $myFatoorahConfig = [];
+    protected $newMfConfig   = [];
+    protected $mfError;
     public $enabled, $title, $description, $icon;
     public $countryMode, $testMode, $apiKey;
     public $webhookSecretKey, $debug, $saveCard, $supplierCode, $invoiceItems;
     public $orderStatus, $success_url, $fail_url;
     public $listOptions, $newDesign, $registerApplePay;
     public $designFont, $designFontSize, $designColor, $themeColor, $cardIcons;
+    //Settings Titles
+    public $frontend, $design, $theme, $resetTheme, $configuration, $options;
 
     /**
      * Constructor for your payment class
@@ -54,7 +62,8 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         $this->lang = substr(determine_locale(), 0, 2);
         $countries  = MyFatoorah::getMFCountries();
         if (is_array($countries)) {
-            $nameIndex = 'countryName' . ucfirst($this->lang);
+            $langIndex = ($this->lang == 'ar') ? 'Ar' : 'En';
+            $nameIndex = 'countryName' . $langIndex;
             foreach ($countries as $key => $obj) {
                 $this->mfCountries[$key] = $obj[$nameIndex];
             }
@@ -255,7 +264,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 //            $currencyIso = get_woocommerce_currency_symbol($currencyIso);
 //        }
 
-        $shipingMethod = $this->getShippingMethod();
+        $shipingMethod = $this->getShippingMethod($order);
 //        $amount       = $order->get_total();
 //        $invoiceItems = [['ItemName' => 'Total amount', 'Quantity' => 1, 'UnitPrice' => "$amount"]];
 
@@ -468,11 +477,12 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-    private function getShippingMethod() {
+    private function getShippingMethod($order) {
 
         $chosen_methods = WC()->session->get('chosen_shipping_methods');
 
-        if (isset($chosen_methods[0])) {
+        //sometimes, shipping is cached in session, use $order->get_shipping_method()
+        if (isset($chosen_methods[0]) && $order->get_shipping_method()) {
             if ($chosen_methods[0] == 'myfatoorah_shipping:1') {
                 return 1;
             } else if ($chosen_methods[0] == 'myfatoorah_shipping:2') {
@@ -732,7 +742,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         }
     }
 
-//-----------------------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------------------------------------------    
 
     /**
      * Return whether or not this gateway still requires setup to function.
@@ -762,14 +772,14 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         $countries = MyFatoorah::getMFCountries();
         $domain    = ($istest) ? $countries[$country]['testPortal'] : $countries[$country]['portal'];
 
-        wp_enqueue_script('myfatoorah-cardview', "$domain/cardview/v2/session.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+        wp_enqueue_script('myfatoorah-cardview', "$domain/cardview/v2/session.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
 
         $isApRegisterd = (isset($v2Options['registerApplePay']) && $v2Options['registerApplePay'] == 'yes' );
         if ($isApRegisterd) {
-            wp_enqueue_script('myfatoorah-applepay', "$domain/applepay/v2/applepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+            wp_enqueue_script('myfatoorah-applepay', "$domain/applepay/v3/applepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
         }
 
-        wp_enqueue_script('myfatoorah-googlepay', "$domain/googlepay/v1/googlepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+        wp_enqueue_script('myfatoorah-googlepay', "$domain/googlepay/v1/googlepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
 
         wp_enqueue_style('myfatoorah-style', plugins_url('assets/css/myfatoorah.css', MYFATOORAH_WOO_PLUGIN), [], MYFATOORAH_WOO_PLUGIN_VERSION);
     }

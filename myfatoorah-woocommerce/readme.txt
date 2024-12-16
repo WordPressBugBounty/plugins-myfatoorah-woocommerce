@@ -1,10 +1,10 @@
 === MyFatoorah - WooCommerce ===
 Contributors: myfatoorah,  nermeenshoman, rashasaeed
-Tags: myfatoorah, fatoorah, my fatoorah, payment, gateway, woo, woo commerce, e-commerce
-Requires at least: 5.0
-Tested up to: 6.4
+Tags: myfatoorah, my fatoorah, payment, woo, woo commerce
+Requires at least: 5.9
+Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.2.7
+Stable tag: 2.2.8
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -93,34 +93,13 @@ This option enables triggering events each time the order status changes at the 
 
 
 == Changelog ==
-= 2.2.7 (2024-03-27) =
-- Refund via MyFatoorah API
-- Change the payment.php to an abstract payment plugin.
-- Move the payment.php, shipping.php, and webhook.php to the "include" folder as plugin classes.
-- Add a new filter to register any new MyFatoorah WooComerce payment as a gateway.
-- Validate the config data with all MyFatoorah payments.
-- Fix the "disable shipping" functionality and let it detect all registered MyFatoorah WooComerce payments using the new filter.
-- Disable shipping if the payment gateways are disabled from the admin payment list.
-- Show only the selected countries in the MyFatoorah Shipping settings for the "Exclude countries from shipping rates" option.
-- Fix Shipping calculation
-- Validate the payment logo link to use HTTPS instead of HTTP.
-- Check each product price to see if it is a number.
-- Change each class-wc-gateway-myfatoorah-XXX to be independent of each other. If no apiKey is set, use the v2Option data.
-- Add a new action for the webhook registration so that a new event handler can be added easily without editing the original code.
-- Add webhook logger file
-- Move the translations from i18n to the languages folder to be able to use WordPress tools for packing the plugin. 
-- Update the translation file after upgrading the plugin.
-- Remove the wp-die function if the WooComerce plugin is not installed or active, and use the admin notice instead. No gateways will be registered until the WooComerce is installed and active. 
-- Add the log backup cron job to backup log files every week.
-- Allow enabling the MyFatoorah Embedded payment if MyFatoorah Cards payment redirects buyers to the invoice page.
-- Add notice for MyFatoorah Embedded payment when disabled.
-- Fix Apple Pay registration
-- Fix the thousand-separator view of the Apple Pay button
-- Translate currencies on the checkout page
+= 2.2.8 (2024-07-14) =
+- Add the WordPress block compatibility
+- Fix the Embedded currency 
 
 See [changelog.txt](https://plugins.svn.wordpress.org/myfatoorah-woocommerce/trunk/changelog.txt) for older logs.
 
 
 == Upgrade Notice ==
-= 2.2.7 =
-We highly recommend upgrading to Version 2.2.7, the latest, fully supported plugin.
+= 2.2.8 =
+The old design and the MyFatoorah Embedded payment is deprecated and will be removed soon. Please, use MyFatoorah's new design.

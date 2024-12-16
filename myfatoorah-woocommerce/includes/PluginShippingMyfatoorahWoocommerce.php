@@ -132,6 +132,13 @@ class PluginShippingMyfatoorahWoocommerce {
         try {
             $searchValue = MyFatoorah::filterInputField('term');
             $countryCode = MyFatoorah::filterInputField('country_code');
+
+            //for block
+            if (strlen($countryCode) > 2) {
+                $countries   = WC()->countries->get_countries();
+                $countryCode = array_search($countryCode, $countries, true);
+            }
+
             if (!$countryCode) {
                 die(json_encode(array('success' => false, 'error' => __('MyFatoorah: kindly select a country', 'myfatoorah-woocommerce'))));
             }
@@ -149,6 +156,13 @@ class PluginShippingMyfatoorahWoocommerce {
         if (!$countryCode) {
             die('input');
         }
+        
+        //for block
+        if (strlen($countryCode) > 2) {
+            $countries   = WC()->countries->get_countries();
+            $countryCode = array_search($countryCode, $countries, true);
+        }
+
         $options = get_option('woocommerce_myfatoorah_shipping_settings');
         if (!empty($options['exe_ship_countries']) && (false !== array_search($countryCode, $options['exe_ship_countries']))) {
             die('input');
@@ -187,9 +201,13 @@ class PluginShippingMyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
     function wp_enqueue_scripts() {
-        wp_enqueue_script('myfatoorah-shipping', plugins_url('assets/js/cities.js', MYFATOORAH_WOO_PLUGIN), ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
-        wp_localize_script('myfatoorah-shipping', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
+        if (WC_Blocks_Utils::has_block_in_page(wc_get_page_id('checkout'), 'woocommerce/checkout')) {
+            //wp_enqueue_script('myfatoorah-shipping', plugins_url('assets/js/citiesBlocks.js', MYFATOORAH_WOO_PLUGIN), ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+        } else {
+            wp_enqueue_script('myfatoorah-shipping', plugins_url('assets/js/cities.js', MYFATOORAH_WOO_PLUGIN), ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+        }
 
+        wp_localize_script('myfatoorah-shipping', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
         wp_enqueue_style('select2');
     }
 

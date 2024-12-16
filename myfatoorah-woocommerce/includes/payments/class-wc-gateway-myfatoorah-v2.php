@@ -16,7 +16,6 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
 
     protected $code;
     protected $count       = 0;
-    protected $gateways    = [];
     protected $totalAmount = 0;
     protected $myfatoorah;
     public $session;
@@ -39,8 +38,10 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
         $this->has_fields = true;
 
         add_action('admin_enqueue_scripts', array($this, 'load_admin_css_js'));
-        if ($this->enabled == 'yes' && $this->newDesign == 'yes' && $this->listOptions == 'multigateways') {
-            add_action('wp_enqueue_scripts', array($this, 'load_css_js'));
+        if ($this->enabled == 'yes' && $this->listOptions == 'multigateways') {
+            if ($this->newDesign == 'yes' || WC_Blocks_Utils::has_block_in_page(wc_get_page_id('checkout'), 'woocommerce/checkout')) {
+                add_action('wp_enqueue_scripts', array($this, 'load_css_js'));
+            }
         }
     }
 
@@ -66,14 +67,19 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
     public function process_payment($orderId) {
         $curlData = $this->getPayLoadData($orderId);
 
-        $gatewayId = MyFatoorah::filterInputField('mfCardData', 'POST') ?? 'myfatoorah';
-        $sessionId = MyFatoorah::filterInputField('mfData', 'POST');
+        $gatewayId = MyFatoorah::filterInputField('mfCardData', 'POST') ?? MyFatoorah::filterInputField('mfcarddata', 'POST') ?? 'myfatoorah';
+        $sessionId = MyFatoorah::filterInputField('mfData', 'POST') ?? MyFatoorah::filterInputField('mfdata', 'POST');
 
         $mfObj = new MyFatoorahPayment($this->myFatoorahConfig);
         $data  = $mfObj->getInvoiceURL($curlData, $gatewayId, $orderId, $sessionId);
 
         $order = wc_get_order($orderId);
         $order->update_meta_data('InvoiceId', $data['invoiceId']);
+
+        $note = '<b>MyFatoorah Payment:</b><br>';
+        $note .= 'InvoiceId: ' . $data['invoiceId'] . '<br>';
+        $order->add_order_note($note);
+
         $order->save();
 
         return array(
@@ -179,8 +185,8 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
     /**
      * Don't enable this payment, if there is no API key
      * 
-     * @param type $key
-     * @param type $value
+     * @param string $key
+     * @param string $value
      * 
      * @return string
      */
@@ -380,6 +386,28 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
                 (isset($this->listOptions) && $this->listOptions == 'multigateways');
 
         return ($testEmbdedWithNewDesign);
+    }
+
+    public function getGateways() {
+        if (isset($this->listOptions) && $this->listOptions == 'myfatoorah') {
+            return null;
+        }
+        $total = $this->get_order_total();
+
+        $mfObj    = new MyFatoorahPaymentEmbedded($this->myFatoorahConfig);
+        $gateways = $mfObj->getCheckoutGateways($total, get_woocommerce_currency(), ($this->registerApplePay == 'yes'));
+        if (empty($gateways['all'])) {
+            throw new Exception(__('There are no payment methods available on your account, please contact your account manager.', 'myfatoorah-woocommerce'));
+        }
+
+        return $gateways;
+    }
+
+    public function getSession() {
+        $userDefinedField = ($this->saveCard == 'yes' && get_current_user_id()) ? 'CK-' . get_current_user_id() : '';
+
+        $myfatoorahPayment = new MyFatoorahPayment($this->myFatoorahConfig);
+        return $myfatoorahPayment->getEmbeddedSession($userDefinedField);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

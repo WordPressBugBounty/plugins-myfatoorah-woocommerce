@@ -29,8 +29,8 @@ class WC_Gateway_Myfatoorah_embedded extends WC_Gateway_Myfatoorah {
 
         /* translators: %s: version number */
 //        $this->method_description = sprintf(__('MyFatoorah Embedded payment version %s.', 'myfatoorah-woocommerce'), MYFATOORAH_WOO_PLUGIN_VERSION);
-        $this->method_description = '<font color=red>' . __('Deprecated and it will be removed soon, use MyFatoorah Card New Design', 'myfatoorah-woocommerce') . '</font>';
-        $this->method_title = __('MyFatoorah - Embedded', 'myfatoorah-woocommerce');
+        $this->method_description = '<font color=darkgoldenrod>' . __('Deprecated and it will be removed soon, use MyFatoorah Card New Design', 'myfatoorah-woocommerce') . '</font>';
+        $this->method_title       = __('MyFatoorah - Embedded', 'myfatoorah-woocommerce');
 
         parent::__construct();
 
@@ -55,7 +55,7 @@ class WC_Gateway_Myfatoorah_embedded extends WC_Gateway_Myfatoorah {
      * @return void 
      */
     function init_form_fields() {
-        $this->form_fields = include(dirname(__DIR__) . '/admin/' . $this->code . '.php' );
+        $this->form_fields = include(dirname(__DIR__) . '/admin/' . $this->code . '.php');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ class WC_Gateway_Myfatoorah_embedded extends WC_Gateway_Myfatoorah {
         $this->gateways    = $myfatoorahPayment->getCachedCheckoutGateways();
 
         $this->get_parent_payment_fields();
-        include_once(MYFATOORAH_WOO_PLUGIN_PATH . 'templates/paymentFieldsEmbedded.php');
+        include_once(MYFATOORAH_WOO_TEMPLATES_PATH . 'paymentFieldsEmbedded.php');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

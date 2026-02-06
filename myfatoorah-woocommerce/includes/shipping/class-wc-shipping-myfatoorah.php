@@ -64,7 +64,7 @@ class WC_Shipping_Myfatoorah extends WC_Shipping_Method {
         $this->lang = substr(determine_locale(), 0, 2);
         $countries  = MyFatoorah::getMFCountries();
         if (is_array($countries)) {
-            $langIndex = ($this->lang == 'ar')? 'Ar' : 'En';
+            $langIndex = ($this->lang == 'ar') ? 'Ar' : 'En';
             $nameIndex = 'countryName' . $langIndex;
             foreach ($countries as $key => $obj) {
                 $this->mfCountries[$key] = $obj[$nameIndex];
@@ -94,7 +94,7 @@ class WC_Shipping_Myfatoorah extends WC_Shipping_Method {
      * @return void 
      */
     function init_form_fields() {
-        $this->form_fields = include(MYFATOORAH_WOO_PLUGIN_PATH . 'includes/admin/shipping.php' );
+        $this->form_fields = include(MYFATOORAH_WOO_PLUGIN_PATH . 'includes/admin/shipping.php');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ class WC_Shipping_Myfatoorah extends WC_Shipping_Method {
                 }
 
                 $invoiceItemsArr[] = array(
-                    'ProductName' => $product->get_title(),
+                    'ProductName' => strip_tags($product->get_title()),
                     "Description" => ($product->get_description()) ?: $product->get_title(),
                     'weight'      => (float) $product->get_weight() * $weightRate,
                     'Width'       => (float) $product->get_width() * $dimensionRate,
@@ -268,7 +268,7 @@ class WC_Shipping_Myfatoorah extends WC_Shipping_Method {
         $gateways = apply_filters('myfatoorah_woocommerce_payment_gateways', []);
         foreach ($gateways as $key => $title) {
             $codeOptions = get_option('woocommerce_myfatoorah_' . $key . '_settings');
-            $isCoEnabled = (isset($codeOptions['enabled']) && $codeOptions['enabled'] == 'yes' );
+            $isCoEnabled = (isset($codeOptions['enabled']) && $codeOptions['enabled'] == 'yes');
 
             if ($isCoEnabled) {
                 return 'yes';

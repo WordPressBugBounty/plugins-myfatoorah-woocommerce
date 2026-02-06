@@ -2,6 +2,10 @@
 
 This file will contains only old changelog. See readme.txt for newer versions.
 
+= 2.2.8 (2024-07-14) =
+- Add the WordPress block compatibility
+- Fix the Embedded currency 
+
 = 2.2.7 (2024-03-27) =
 - Refund via MyFatoorah API
 - Change the payment.php to an abstract payment plugin.

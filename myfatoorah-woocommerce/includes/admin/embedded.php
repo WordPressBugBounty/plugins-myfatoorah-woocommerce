@@ -31,7 +31,7 @@ return array(
         'type'              => 'text',
         'description'       => __('Please insert your logo URL which the user sees during checkout.', 'myfatoorah-woocommerce'),
         'desc_tip'          => true,
-        'default'           => plugins_url(MYFATOORAH_WOO_PLUGIN_NAME) . '/assets/images/' . $this->code . '.png',
+        'default'           => MYFATOORAH_WOO_ASSETS_URL . '/images/myfatoorah.png',
         'sanitize_callback' => 'sanitize_url'
     )
 );

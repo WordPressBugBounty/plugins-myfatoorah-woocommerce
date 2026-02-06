@@ -152,7 +152,7 @@ return [
         'type'        => 'text',
         'description' => __('Please insert your logo URL which the user sees during checkout.', 'myfatoorah-woocommerce'),
         'desc_tip'    => true,
-        'default'     => plugins_url("assets/images/$this->code.png", MYFATOORAH_WOO_PLUGIN),
+        'default'     => MYFATOORAH_WOO_ASSETS_URL . '/images/myfatoorah.png',
     //'sanitize_callback' => 'sanitize_url'
     ),
     'listOptions'      => array(
@@ -171,11 +171,11 @@ return [
         'type'  => 'title'
     ],
     'newDesign'        => array(
-        'title'   => __('New Design', 'myfatoorah-woocommerce'),
-        'type'    => 'checkbox',
-        'description' => '<font color="red"><span class="dashicon dashicons dashicons-remove"></span>' . __('Old Design is deprecated and it will be removed soon.', 'myfatoorah-woocommerce') . '</font>',
-        'default' => 'yes',
-        'label'   => __('Enable New Design', 'myfatoorah-woocommerce'),
+        'title'       => __('New Design', 'myfatoorah-woocommerce'),
+        'type'        => 'checkbox',
+        'description' => '<font color="darkgoldenrod"><span class="dashicon dashicons dashicons-remove"></span>' . __('Old Design is deprecated and it will be removed soon.', 'myfatoorah-woocommerce') . '</font>',
+        'default'     => 'yes',
+        'label'       => __('Enable New Design', 'myfatoorah-woocommerce'),
     ),
     'registerApplePay' => array(
         'title'       => __('Apple Pay Embedded', 'myfatoorah-woocommerce'),

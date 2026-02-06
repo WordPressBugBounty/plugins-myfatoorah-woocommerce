@@ -53,7 +53,7 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
      * @return void 
      */
     function init_form_fields() {
-        $this->form_fields = include(dirname(__DIR__) . '/admin/' . $this->code . '.php' );
+        $this->form_fields = include(dirname(__DIR__) . '/admin/' . $this->code . '.php');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
 
     function payment_fields_v2() {
         if (!empty($this->mfError)) {
-            return include_once(MYFATOORAH_WOO_PLUGIN_PATH . 'templates/error.php');
+            return include_once(MYFATOORAH_WOO_TEMPLATES_PATH . 'error.php');
         }
 
         if (isset($this->newDesign) && $this->newDesign == 'yes' && $this->listOptions === 'multigateways') {
@@ -101,13 +101,13 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
             $myfatoorahPayment = new MyFatoorahPayment($this->myFatoorahConfig);
             $this->session     = $myfatoorahPayment->getEmbeddedSession($userDefinedField);
 
-            $file = 'templates/paymentFields.php';
+            $file = 'paymentFields.php';
         } else {
-            $file = 'templates/paymentFieldsV2.php';
+            $file = 'paymentFieldsV2.php';
         }
 
         $this->get_parent_payment_fields();
-        include_once(MYFATOORAH_WOO_PLUGIN_PATH . $file);
+        include_once(MYFATOORAH_WOO_TEMPLATES_PATH . $file);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -359,8 +359,8 @@ class WC_Gateway_Myfatoorah_v2 extends WC_Gateway_Myfatoorah {
     function load_admin_css_js() {
 
         wp_enqueue_script('wp-color-picker', 'wp-admin/js/color-picker.min.js');
-        wp_enqueue_script('myfatoorah-admin', plugins_url('assets/js/admin.js', MYFATOORAH_WOO_PLUGIN), [], MYFATOORAH_WOO_PLUGIN_VERSION);
-        wp_enqueue_style('myfatoorah-admin', plugins_url('assets/css/myfatoorah-admin.css', MYFATOORAH_WOO_PLUGIN), [], MYFATOORAH_WOO_PLUGIN_VERSION);
+        wp_enqueue_script('myfatoorah-admin', MYFATOORAH_WOO_ASSETS_URL . '/js/admin.js', [], MYFATOORAH_WOO_PLUGIN_VERSION);
+        wp_enqueue_style('myfatoorah-admin', MYFATOORAH_WOO_ASSETS_URL . '/css/admin.css', [], MYFATOORAH_WOO_PLUGIN_VERSION);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

@@ -94,44 +94,44 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
      */
     function init_myfatoorah_options() {
 
-        if (empty($this->apiKey)) {
-            $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
+        //if (empty($this->apiKey)) {
+        $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
 
-            /* payment info */
-            //$this->enabled     = !empty($v2Options['enabled']) ? trim($v2Options['enabled']) : '';
-            //$this->title       = !empty($v2Options['title']) ? trim($v2Options['title']) : '';
-            //$this->description = !empty($v2Options['description']) ? trim($v2Options['description']) : '';
-            //$this->icon        = !empty($v2Options['icon']) ? trim($v2Options['icon']) : '';
+        /* payment info */
+        //$this->enabled     = !empty($v2Options['enabled']) ? trim($v2Options['enabled']) : '';
+        //$this->title       = !empty($v2Options['title']) ? trim($v2Options['title']) : '';
+        //$this->description = !empty($v2Options['description']) ? trim($v2Options['description']) : '';
+        //$this->icon        = !empty($v2Options['icon']) ? trim($v2Options['icon']) : '';
 
-            /* myfatoorah info */
-            $this->apiKey      = !empty($v2Options['apiKey']) ? trim($v2Options['apiKey']) : '';
-            $this->countryMode = !empty($v2Options['countryMode']) ? $v2Options['countryMode'] : 'KWT';
-            $this->testMode    = !empty($v2Options['testMode']) ? $v2Options['testMode'] : 'no';
+        /* myfatoorah info */
+        $this->apiKey      = !empty($v2Options['apiKey']) ? trim($v2Options['apiKey']) : '';
+        $this->countryMode = !empty($v2Options['countryMode']) ? $v2Options['countryMode'] : 'KWT';
+        $this->testMode    = !empty($v2Options['testMode']) ? $v2Options['testMode'] : 'no';
 
-            /* mf features info */
-            $this->debug            = !empty($v2Options['debug']) ? $v2Options['debug'] : 'yes';
-            $this->webhookSecretKey = !empty($v2Options['webhookSecretKey']) ? trim($v2Options['webhookSecretKey']) : '';
-            $this->saveCard         = !empty($v2Options['saveCard']) ? $v2Options['saveCard'] : 'no';
-            $this->invoiceItems     = !empty($v2Options['invoiceItems']) ? $v2Options['invoiceItems'] : 'yes';
-            $this->supplierCode     = !empty($v2Options['supplierCode']) ? $v2Options['supplierCode'] : 0;
+        /* mf features info */
+        $this->debug            = !empty($v2Options['debug']) ? $v2Options['debug'] : 'yes';
+        $this->webhookSecretKey = !empty($v2Options['webhookSecretKey']) ? trim($v2Options['webhookSecretKey']) : '';
+        $this->saveCard         = !empty($v2Options['saveCard']) ? $v2Options['saveCard'] : 'no';
+        $this->invoiceItems     = !empty($v2Options['invoiceItems']) ? $v2Options['invoiceItems'] : 'yes';
+        $this->supplierCode     = !empty($v2Options['supplierCode']) ? $v2Options['supplierCode'] : 0;
 
-            /* woo features info */
-            $this->orderStatus = !empty($v2Options['orderStatus']) ? $v2Options['orderStatus'] : 'processing';
-            $this->success_url = !empty($v2Options['success_url']) ? trim($v2Options['success_url']) : '';
-            $this->fail_url    = !empty($v2Options['fail_url']) ? trim($v2Options['fail_url']) : '';
+        /* woo features info */
+        $this->orderStatus = !empty($v2Options['orderStatus']) ? $v2Options['orderStatus'] : 'processing';
+        $this->success_url = !empty($v2Options['success_url']) ? trim($v2Options['success_url']) : '';
+        $this->fail_url    = !empty($v2Options['fail_url']) ? trim($v2Options['fail_url']) : '';
 
-            /* v2 info */
-            $this->listOptions      = !empty($v2Options['listOptions']) ? $v2Options['listOptions'] : 'multigateways';
-            $this->newDesign        = !empty($v2Options['newDesign']) ? $v2Options['newDesign'] : 'yes';
-            $this->registerApplePay = !empty($v2Options['registerApplePay']) ? $v2Options['registerApplePay'] : 'no';
+        /* v2 info */
+        $this->listOptions      = !empty($v2Options['listOptions']) ? $v2Options['listOptions'] : 'multigateways';
+        $this->newDesign        = !empty($v2Options['newDesign']) ? $v2Options['newDesign'] : 'yes';
+        $this->registerApplePay = !empty($v2Options['registerApplePay']) ? $v2Options['registerApplePay'] : 'no';
 
-            /* theme info */
-            $this->designColor    = !empty($v2Options['designColor']) ? $v2Options['designColor'] : '#888484';
-            $this->themeColor     = !empty($v2Options['themeColor']) ? $v2Options['themeColor'] : '#0293cc';
-            $this->designFont     = !empty($v2Options['designFont']) ? $v2Options['designFont'] : 'sans-serif';
-            $this->designFontSize = !empty($v2Options['designFontSize']) ? $v2Options['designFontSize'] : '12';
-            $this->cardIcons      = !empty($v2Options['cardIcons']) ? $v2Options['cardIcons'] : 'no';
-        }
+        /* theme info */
+        $this->designColor    = !empty($v2Options['designColor']) ? $v2Options['designColor'] : '#888484';
+        $this->themeColor     = !empty($v2Options['themeColor']) ? $v2Options['themeColor'] : '#0293cc';
+        $this->designFont     = !empty($v2Options['designFont']) ? $v2Options['designFont'] : 'sans-serif';
+        $this->designFontSize = !empty($v2Options['designFontSize']) ? $v2Options['designFontSize'] : '12';
+        $this->cardIcons      = !empty($v2Options['cardIcons']) ? $v2Options['cardIcons'] : 'no';
+        //}
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function getPayLoadData($orderId) {
-        $order = new WC_Order($orderId);
+        $order = new WC_Order($orderId); //todo switch to wc_get_order
 
         $fName = $order->get_billing_first_name();
         if (!$fName) {
@@ -254,6 +254,10 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         }
 
         $sucess_url  = add_query_arg($args, home_url());
+//        $sucess_url  = home_url() . 'wc-api/myfatoorah_process?oid=' . base64_encode($orderId);
+//        if (MyFatoorah::filterInputField('pay_for_order') == 'true') {
+//            $sucess_url = 'pay_for_order=true';
+//        }
         //$sucess_url = $order->get_checkout_order_received_url();
         //$err_url    = $order->get_cancel_order_url_raw();
         //$err_url    = wc_get_checkout_url();
@@ -385,10 +389,11 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
                 throw new Exception($errMsg);
             }
 
-            $itemPrice         = $itemSubtotalPrice / $item->get_quantity();
-            $amount            += $itemSubtotalPrice;
+            $itemPrice = $itemSubtotalPrice / $item->get_quantity();
+            $amount    += $itemSubtotalPrice;
+
             $invoiceItemsArr[] = [
-                'ItemName'  => $itemName,
+                'ItemName'  => strip_tags($itemName),
                 'Quantity'  => $item->get_quantity(),
                 'UnitPrice' => "$itemPrice",
                 'weight'    => ($shipingMethod) ? (float) ($product->get_weight()) * $weightRate : null,
@@ -454,21 +459,23 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         //------------------------------
         //Tax
-        $MFShipping = 0;
-        if ($shipingMethod) {
-            $cartTotals = WC()->cart->get_totals();
-            $MFShipping = $cartTotals['shipping_total'];
+        $tax = $order->get_total_tax();
+        if ($tax > 0) {
+            //error_log(PHP_EOL . date('d.m.Y h:i:s') . ' - In Tax section' . $tax, 3, WC_LOG_DIR . 'myfatoorah_tax_section.log');
+            $MFShipping = 0;
+            if ($shipingMethod) {
+                $cartTotals = WC()->cart->get_totals();
+                $MFShipping = $cartTotals['shipping_total'];
+            }
+
+            $tax = round($order->get_total() - $amount - $MFShipping, wc_get_price_decimals()); // IMP MF Shipping 
+            if ($tax) {
+                $itemName = $forceEnglishItemName ? 'Taxes' : __('Taxes', 'woocommerce');
+
+                $amount            += $tax;
+                $invoiceItemsArr[] = ['ItemName' => $itemName, 'Quantity' => '1', 'UnitPrice' => "$tax", 'Weight' => '0', 'Width' => '0', 'Height' => '0', 'Depth' => '0'];
+            }
         }
-
-//        $tax = $order->get_total_tax();
-        $tax = round($order->get_total() - $amount - $MFShipping, wc_get_price_decimals()); // IMP MF Shipping 
-        if ($tax) {
-            $itemName = $forceEnglishItemName ? 'Taxes' : __('Taxes', 'woocommerce');
-
-            $amount            += $tax;
-            $invoiceItemsArr[] = ['ItemName' => $itemName, 'Quantity' => '1', 'UnitPrice' => "$tax", 'Weight' => '0', 'Width' => '0', 'Height' => '0', 'Depth' => '0'];
-        }
-
 
         //------------------------------
         //total
@@ -510,7 +517,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         $order->update_meta_data('InvoiceId', $data->InvoiceId);
         $order->update_meta_data('InvoiceReference', $data->InvoiceReference);
-        $order->update_meta_data('InvoiceDisplayValue', $data->InvoiceDisplayValue);
+        $order->update_meta_data('InvoiceDisplayCurrencyValue', $data->InvoiceDisplayValue);
         $order->update_meta_data('InvoiceBaseValue', $data->InvoiceValue);
 
         //focusTransaction
@@ -584,6 +591,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             $order->add_order_note($noteTitle . $data->InvoiceError);
         }
         //Calling the save() method is a relatively expensive operation, so you may wish to avoid calling it more times than necessary (for example, if you know it will be called later in the same flow, you may wish to avoid additional earlier calls when operating on the same object).
+        $order->update_meta_data('myfatoorah_status', $data->InvoiceStatus);
         $order->save();
 
         return $data->InvoiceError;
@@ -624,7 +632,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 //-----------------------------------------------------------------------------------------------------------------------------------------
 
     function payment_fields() {
-        include(MYFATOORAH_WOO_PLUGIN_PATH . 'templates/pre_payment_fields.php');
+        include(MYFATOORAH_WOO_TEMPLATES_PATH . 'pre_payment_fields.php');
 
         try {
             if (!wc_checkout_is_https()) {
@@ -634,7 +642,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             $this->{'payment_fields_' . $this->code}();
         } catch (Exception $ex) {
             $this->mfError = $ex->getMessage();
-            include(MYFATOORAH_WOO_PLUGIN_PATH . 'templates/error.php');
+            include(MYFATOORAH_WOO_TEMPLATES_PATH . 'error.php');
         }
     }
 
@@ -649,7 +657,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         $gateways = apply_filters('myfatoorah_woocommerce_payment_gateways', []);
         foreach ($gateways as $key => $value) {
             $options   = get_option('woocommerce_myfatoorah_' . $key . '_settings');
-            $isEnabled = (isset($options['enabled']) && $options['enabled'] == 'yes' );
+            $isEnabled = (isset($options['enabled']) && $options['enabled'] == 'yes');
 
             if ($isEnabled) {
                 $options['enabled'] = 'no';
@@ -661,7 +669,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         }
 
         $shipOptions = get_option('woocommerce_myfatoorah_shipping_settings');
-        $isShEnabled = (isset($shipOptions['enabled']) && $shipOptions['enabled'] == 'yes' );
+        $isShEnabled = (isset($shipOptions['enabled']) && $shipOptions['enabled'] == 'yes');
         if ($isShEnabled) {
             $shipOptions['enabled'] = 'no';
             update_option('woocommerce_myfatoorah_shipping_settings', apply_filters('woocommerce_settings_api_sanitized_fields_myfatoorah_shipping', $shipOptions), 'yes');
@@ -673,7 +681,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
     function disableShipping($code) {
 
         $shipOptions = get_option('woocommerce_myfatoorah_shipping_settings');
-        $isShEnabled = (isset($shipOptions['enabled']) && $shipOptions['enabled'] == 'yes' );
+        $isShEnabled = (isset($shipOptions['enabled']) && $shipOptions['enabled'] == 'yes');
         if (!$isShEnabled) {
             return;
         }
@@ -683,7 +691,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         foreach ($gateways as $key => $value) {
             $codeOptions = get_option('woocommerce_myfatoorah_' . $key . '_settings');
-            $isCoEnabled = (isset($codeOptions['enabled']) && $codeOptions['enabled'] == 'yes' );
+            $isCoEnabled = (isset($codeOptions['enabled']) && $codeOptions['enabled'] == 'yes');
 
             if ($isCoEnabled) {
                 return;
@@ -716,6 +724,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             $this->disablePaymentsAndShipping();
 
             WC_Admin_Settings::add_error(__('You should add the API key in the "MyFatoorah - Cards" payment Settings first.', 'myfatoorah-woocommerce'));
+            error_log(PHP_EOL . date('d.m.Y h:i:s') . ' - Empty API key', 3, $this->pluginlog);
             return false;
         }
 
@@ -738,6 +747,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             $this->disablePaymentsAndShipping();
 
             WC_Admin_Settings::add_error(__($ex->getMessage(), 'myfatoorah-woocommerce'));
+            error_log(PHP_EOL . date('d.m.Y h:i:s') . ' - Exception: isMfConfigDataValid - ' . $ex->getMessage(), 3, $this->pluginlog);
             return false;
         }
     }
@@ -753,6 +763,10 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
      * @return bool
      */
     public function needs_setup() {
+        if (isset($this->enabled) && $this->enabled === 'yes') {
+            return false;
+        }
+
         $options = [
             'apiKey'      => $this->apiKey,
             'countryMode' => $this->countryMode,
@@ -774,14 +788,14 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         wp_enqueue_script('myfatoorah-cardview', "$domain/cardview/v2/session.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
 
-        $isApRegisterd = (isset($v2Options['registerApplePay']) && $v2Options['registerApplePay'] == 'yes' );
+        $isApRegisterd = (isset($v2Options['registerApplePay']) && $v2Options['registerApplePay'] == 'yes');
         if ($isApRegisterd) {
             wp_enqueue_script('myfatoorah-applepay', "$domain/applepay/v3/applepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
         }
 
         wp_enqueue_script('myfatoorah-googlepay', "$domain/googlepay/v1/googlepay.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
 
-        wp_enqueue_style('myfatoorah-style', plugins_url('assets/css/myfatoorah.css', MYFATOORAH_WOO_PLUGIN), [], MYFATOORAH_WOO_PLUGIN_VERSION);
+        wp_enqueue_style('myfatoorah-style', MYFATOORAH_WOO_ASSETS_URL . '/css/myfatoorah.css', [], MYFATOORAH_WOO_PLUGIN_VERSION);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------

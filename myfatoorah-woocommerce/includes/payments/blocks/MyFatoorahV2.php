@@ -76,7 +76,7 @@ final class MyFatoorahV2 extends AbstractPaymentMethodType {
             if (!wc_checkout_is_https()) {
                 throw new Exception(__('MyFatoorah forces SSL checkout Payment. Your checkout is not secure! Please, contact the site admin to enable SSL and ensure that the server has a valid SSL certificate.', 'myfatoorah-woocommerce'));
             }
-            
+
             $mfWooGateway = new WC_Gateway_Myfatoorah_v2();
             $gateways     = is_admin() ? [] : $mfWooGateway->getGateways();
             $session      = is_admin() ? null : $mfWooGateway->getSession();

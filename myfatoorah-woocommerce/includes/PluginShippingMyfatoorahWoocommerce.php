@@ -55,10 +55,7 @@ class PluginShippingMyfatoorahWoocommerce {
      * @return array
      */
     function plugin_action_links($links) {
-
-        $plugin_links = array(
-            '<a href="' . admin_url('admin.php?page=wc-settings&tab=shipping&section=myfatoorah_shipping') . '">' . __('Shipping', 'woocommerce') . '</a>',
-        );
+        $plugin_links = ['myfatoorah_shipping' => '<a href="' . admin_url('admin.php?page=wc-settings&tab=shipping&section=myfatoorah_shipping') . '">' . __('Shipping', 'woocommerce') . '</a>'];
         return array_merge($links, $plugin_links);
     }
 
@@ -156,7 +153,7 @@ class PluginShippingMyfatoorahWoocommerce {
         if (!$countryCode) {
             die('input');
         }
-        
+
         //for block
         if (strlen($countryCode) > 2) {
             $countries   = WC()->countries->get_countries();
@@ -202,9 +199,9 @@ class PluginShippingMyfatoorahWoocommerce {
 //-----------------------------------------------------------------------------------------------------------------------------------------
     function wp_enqueue_scripts() {
         if (WC_Blocks_Utils::has_block_in_page(wc_get_page_id('checkout'), 'woocommerce/checkout')) {
-            //wp_enqueue_script('myfatoorah-shipping', plugins_url('assets/js/citiesBlocks.js', MYFATOORAH_WOO_PLUGIN), ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+            //wp_enqueue_script('myfatoorah-shipping', MYFATOORAH_WOO_ASSETS_URL .'/js/citiesBlocks.js', ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
         } else {
-            wp_enqueue_script('myfatoorah-shipping', plugins_url('assets/js/cities.js', MYFATOORAH_WOO_PLUGIN), ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
+            wp_enqueue_script('myfatoorah-shipping', MYFATOORAH_WOO_ASSETS_URL . '/js/cities.js', ['jquery'], MYFATOORAH_WOO_PLUGIN_VERSION, true);
         }
 
         wp_localize_script('myfatoorah-shipping', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
@@ -213,7 +210,7 @@ class PluginShippingMyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function admin_enqueue_scripts() {
-        wp_enqueue_script('myfatoorah-admin', plugins_url('assets/js/admin.js', MYFATOORAH_WOO_PLUGIN), [], MYFATOORAH_WOO_PLUGIN_VERSION);
+        wp_enqueue_script('myfatoorah-admin', MYFATOORAH_WOO_ASSETS_URL . '/js/admin.js', [], MYFATOORAH_WOO_PLUGIN_VERSION);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------

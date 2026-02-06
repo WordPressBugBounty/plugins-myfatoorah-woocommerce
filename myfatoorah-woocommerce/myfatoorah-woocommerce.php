@@ -9,7 +9,7 @@
  * Plugin Name:       MyFatoorah - WooCommerce
  * Plugin URI:        https://myfatoorah.readme.io/docs/woocommerce/
  * Description:       MyFatoorah Payment Gateway for WooCommerce. Integrated with MyFatoorah DHL/Aramex Shipping Methods.
- * Version:           2.2.8
+ * Version:           2.2.9
  * Author:            MyFatoorah
  * Author URI:        https://www.myfatoorah.com/
  * License:           GNU General Public License v3.0
@@ -37,10 +37,12 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use MyFatoorah\WooCommerce\Payments\Blocks\MyFatoorahV2;
 
 //MFWOO_PLUGIN
-define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.8');
+define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.9');
 define('MYFATOORAH_WOO_PLUGIN', plugin_basename(__FILE__));
 define('MYFATOORAH_WOO_PLUGIN_NAME', dirname(MYFATOORAH_WOO_PLUGIN));
 define('MYFATOORAH_WOO_PLUGIN_PATH', plugin_dir_path(__FILE__));
+define('MYFATOORAH_WOO_TEMPLATES_PATH', plugin_dir_path(__FILE__) . 'includes/templates/');
+define('MYFATOORAH_WOO_ASSETS_URL', plugins_url('public', MYFATOORAH_WOO_PLUGIN));
 
 require_once MYFATOORAH_WOO_PLUGIN_PATH . 'includes/libraries/MyfatoorahLoader.php';
 require_once MYFATOORAH_WOO_PLUGIN_PATH . 'includes/libraries/MyfatoorahLibrary.php';
@@ -65,7 +67,8 @@ class MyfatoorahWoocommerce {
 
         //actions
         add_action('activate_plugin', [$this, 'activate_plugin'], 0);
-        add_action('plugins_loaded', [$this, 'init'], 0);
+        add_action('deactivate_plugin', [$this, 'deactivate_plugin']);
+        add_action('init', [$this, 'init']);
         add_action('in_plugin_update_message-' . MYFATOORAH_WOO_PLUGIN, [$this, 'prefix_plugin_update_message'], 10, 2);
         add_action('upgrader_process_complete', [$this, 'upgrader_process_complete'], 10, 2);
 
@@ -117,9 +120,19 @@ class MyfatoorahWoocommerce {
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
+
+    function deactivate_plugin($plugin) {
+        if ($plugin == MYFATOORAH_WOO_PLUGIN) {
+            $this->updateTransFile();
+        }
+    }
+
     function activate_plugin($plugin) {
         // Localisation
-        $this->updateTransFile();
+        if ($plugin == MYFATOORAH_WOO_PLUGIN) {
+            $this->updateIconFile();
+            $this->updateToNewDesign();
+        }
 
         //nice code but give graceful failure in
         //https://plugintests.com/plugins/wporg/myfatoorah-woocommerce/latest
@@ -147,6 +160,8 @@ class MyfatoorahWoocommerce {
                 // Check to ensure it's my plugin
                 if ($plugin == MYFATOORAH_WOO_PLUGIN) {
                     $this->updateTransFile();
+                    $this->updateIconFile();
+                    $this->updateToNewDesign();
                 }
             }
         }
@@ -154,19 +169,34 @@ class MyfatoorahWoocommerce {
 
 //-----------------------------------------------------------------------------------------------------------------------------
     function updateTransFile() {
-        $arTrans = 'myfatoorah-woocommerce-ar';
-        if (is_dir(WP_LANG_DIR . '/plugins/')) {
-            $filePath = WP_LANG_DIR . '/plugins/' . $arTrans;
-            $moFileAr = $filePath . '.mo';
-            $poFileAr = $filePath . '.po';
-
-            $newFilePath = __DIR__ . '/languages/' . $arTrans;
-            $moNewFileAr = $newFilePath . '.mo';
-            $poNewFileAr = $newFilePath . '.po';
-
-            copy($moNewFileAr, $moFileAr);
-            copy($poNewFileAr, $poFileAr);
+        $path  = WP_LANG_DIR . '/plugins/myfatoorah-woocommerce';
+        $files = glob($path . '*');
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
         }
+    }
+
+    function updateIconFile() {
+        $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
+        if (str_contains($v2Options['icon'], 'plugins/myfatoorah-woocommerce/assets/images/v2.png')) {
+            $v2Options['icon'] = str_replace('assets/images/v2.png', 'public/images/myfatoorah.png', $v2Options['icon']);
+            update_option('woocommerce_myfatoorah_v2_settings', apply_filters('woocommerce_settings_api_sanitized_fields_' . 'myfatoorah_v2', $v2Options), 'yes');
+        }
+
+        $emOptions = get_option('woocommerce_myfatoorah_embedded_settings');
+        if (str_contains($emOptions['icon'], 'plugins/myfatoorah-woocommerce/assets/images/embedded.png')) {
+            $emOptions['icon'] = str_replace('assets/images/embedded.png', 'public/images/myfatoorah.png', $emOptions['icon']);
+            update_option('woocommerce_myfatoorah_embedded_settings', apply_filters('woocommerce_settings_api_sanitized_fields_' . 'myfatoorah_embedded', $emOptions), 'yes');
+        }
+    }
+
+    function updateToNewDesign() {
+        $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
+
+        $v2Options['newDesign'] = 'yes';
+        update_option('woocommerce_myfatoorah_v2_settings', apply_filters('woocommerce_settings_api_sanitized_fields_' . 'myfatoorah_v2', $v2Options), 'yes');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -181,15 +211,18 @@ class MyfatoorahWoocommerce {
      * Init localizations and files
      */
     public function init() {
-	if (!class_exists('WooCommerce')) {
+        if (!class_exists('WooCommerce')) {
             add_action('admin_notices', [$this, 'admin_notices']);
             return;
         }
 
+        // Localisation
+        load_plugin_textdomain('myfatoorah-woocommerce', false, MYFATOORAH_WOO_PLUGIN_NAME . '/languages');
+
         //load payment
         require_once 'includes/PluginPaymentMyfatoorahWoocommerce.php';
         new PluginPaymentMyfatoorahWoocommerce('v2');
-        new PluginPaymentMyfatoorahWoocommerce('embedded');
+        //new PluginPaymentMyfatoorahWoocommerce('embedded');
 
         //load shipping
         require_once 'includes/PluginShippingMyfatoorahWoocommerce.php';
@@ -199,9 +232,6 @@ class MyfatoorahWoocommerce {
         require_once 'includes/PluginWebhookMyfatoorahWoocommerce.php';
         new PluginWebhookMyfatoorahWoocommerce();
 
-	// Localisation
-        load_plugin_textdomain('myfatoorah-woocommerce', false, MYFATOORAH_WOO_PLUGIN_NAME . '/languages');
-        
         //load cron
         //https://www.codesmade.com/wordpress-add-cron-job-programmatically/
         add_action('myfatoorah_backup_log_files', [$this, 'myfatoorah_backup_log_files']);

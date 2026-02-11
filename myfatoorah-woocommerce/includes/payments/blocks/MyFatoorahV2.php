@@ -8,6 +8,8 @@ use Exception;
 
 defined('ABSPATH') || exit;
 
+include_once(MYFATOORAH_WOO_PLUGIN_PATH . 'includes/payments/class-wc-gateway-myfatoorah-v2.php');
+
 /**
  * MyFatoorah V2 (myfatoorah_v2) payment method integration
  *
@@ -70,7 +72,6 @@ final class MyFatoorahV2 extends AbstractPaymentMethodType {
      * @return array
      */
     public function get_payment_method_data() {
-
         $gateways = $session  = $error    = null;
         try {
             if (!wc_checkout_is_https()) {
@@ -101,6 +102,7 @@ final class MyFatoorahV2 extends AbstractPaymentMethodType {
                 'designFontSize' => $this->get_setting('designFontSize')
             ],
             'mfLang'      => substr(determine_locale(), 0, 2),
+            'mfVersion'   => MYFATOORAH_WOO_PLUGIN_VERSION,
             'error'       => $error
         ];
     }

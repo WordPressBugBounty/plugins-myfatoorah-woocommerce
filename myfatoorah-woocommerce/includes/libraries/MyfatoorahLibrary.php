@@ -22,6 +22,7 @@
  */
 class MyFatoorah extends MyFatoorahHelper
 {
+    //-----------------------------------------------------------------------------------------------------------------------------------------
 
     /**
      * The configuration used to connect to MyFatoorah test/live API server
@@ -178,8 +179,7 @@ class MyFatoorah extends MyFatoorahHelper
      */
     public function callAPI($url, $postFields = null, $orderId = null, $function = null)
     {
-
-        //to prevent json_encode adding lots of decimal digits
+        // Prevent json_encode from adding lots of decimal digits
         ini_set('precision', '14');
         ini_set('serialize_precision', '-1');
 
@@ -187,46 +187,40 @@ class MyFatoorah extends MyFatoorahHelper
         $fields  = empty($postFields) ? json_encode($postFields, JSON_FORCE_OBJECT) : json_encode($postFields, JSON_UNESCAPED_UNICODE);
 
         $msgLog = "Order #$orderId ----- $function";
-        
-        if(!empty($orderId) || ($function != 'Initiate Payment' && $function != 'Get Currencies Exchange List')){
-            $this->log("$msgLog - Request: $fields");
-        }
+        $this->log("$msgLog - Request: $fields");
 
         //***************************************
-        //call url
+        //Call API url
         //***************************************
         $curl = curl_init($url);
 
-        $option = [
+        $options = [
             CURLOPT_CUSTOMREQUEST  => $request,
             CURLOPT_POSTFIELDS     => $fields,
             CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $this->config['apiKey'], 'Content-Type: application/json'],
             CURLOPT_RETURNTRANSFER => true
         ];
 
-        curl_setopt_array($curl, $option);
+        curl_setopt_array($curl, $options);
 
         $res = curl_exec($curl);
         $err = curl_error($curl);
 
         curl_close($curl);
 
-        //example set a local ip to host apitest.myfatoorah.com
+        //Check for cURL errors
         if ($err) {
             $this->log("$msgLog - cURL Error: $err");
-            throw new Exception($err);
+            throw new Exception('cURL Error: ' . $err);
         }
 
-        if(!empty($orderId) || ($function != 'Initiate Payment' && $function != 'Get Currencies Exchange List')){
-            $this->log("$msgLog - Response: $res");
-        }
+        $this->log("$msgLog - Response: $res");
 
         $json = json_decode((string) $res);
 
         //***************************************
-        //check for errors
+        //Check for reponse errors
         //***************************************
-        //Check for the reponse errors
         $error = self::getAPIError($json, (string) $res);
         if ($error) {
             $this->log("$msgLog - Error: $error");
@@ -342,7 +336,7 @@ class MyFatoorah extends MyFatoorahHelper
         //"Message":
         //"No HTTP resource was found that matches the request URI 'https://apitest.myfatoorah.com/v2/SendPayment222'.",
         //"MessageDetail":
-        //"No route providing a controller name was found to match request URI 
+        //"No route providing a controller name was found to match request URI
         //'https://apitest.myfatoorah.com/v2/SendPayment222'"
         //}
 
@@ -374,6 +368,49 @@ class MyFatoorah extends MyFatoorahHelper
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Get the vendor time zone based on the configured vendor country code.
+     *
+     * In test mode, the Kuwait time zone is always used.
+     * In live mode, the time zone is resolved from the vendor country configuration.
+     *
+     * @return string The vendor time zone.
+     */
+    protected function getVendorTimeZone()
+    {
+        $countries = self::getMFCountries();
+
+        $vcCode = $this->config['vcCode'];
+        $isTest = $this->config['isTest'];
+
+        return ($isTest) ? $countries['KWT']['timeZone'] : $countries[$vcCode]['timeZone'];
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Get the localized ExpiryDate based on the vendor’s country using ExpiryMinutes.
+     *
+     * @param int|string $expiryMinutes The number of minutes after which the invoice expires.
+     *
+     * @return string
+     */
+    public function getExpiryDate($expiryMinutes)
+    {
+        if (!ctype_digit((string) $expiryMinutes) || (int) $expiryMinutes <= 0) {
+            return '';
+        }
+
+        $timeZone = $this->getVendorTimeZone();
+
+        $nowDate = new \DateTime('now', new \DateTimeZone($timeZone));
+        $nowDate->modify("+$expiryMinutes minutes");
+
+        return $nowDate->format('Y-m-d\TH:i:s');
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
 }
 
 
@@ -382,6 +419,7 @@ class MyFatoorah extends MyFatoorahHelper
  */
 class MyFatoorahHelper
 {
+    //-----------------------------------------------------------------------------------------------------------------------------------------
 
     /**
      * The file name or the logger object
@@ -434,7 +472,7 @@ class MyFatoorahHelper
         //check for the allowed length
         $len = strlen($string4);
         if ($len < 3 || $len > 14) {
-            throw new Exception('Phone Number lenght must be between 3 to 14 digits');
+            throw new Exception('Phone Number length must be between 3 to 14 digits');
         }
 
         //get the phone arr
@@ -547,34 +585,50 @@ class MyFatoorahHelper
     //-----------------------------------------------------------------------------------------------------------------------------------------
 
     /**
-     * Validate webhook signature function
+     * Validate Webhook version 1 signature function
+     * keep it for the old system
      *
-     * @param array  $dataArray webhook request array
-     * @param string $secret    webhook secret key
+     * @param array  $dataModel Webhook request array
+     * @param string $secretKey Webhook secret key
      * @param string $signature MyFatoorah signature
      * @param int    $eventType MyFatoorah Event type Number (1, 2, 3 , 4)
      *
      * @return boolean
      */
-    public static function isSignatureValid($dataArray, $secret, $signature, $eventType = 0)
+    public static function isSignatureValid($dataModel, $secretKey, $signature, $eventType = 1)
     {
 
         if ($eventType == 2) {
-            unset($dataArray['GatewayReference']);
+            unset($dataModel['GatewayReference']);
         }
 
-        uksort($dataArray, 'strcasecmp');
+        uksort($dataModel, 'strcasecmp');
 
+        return self::checkSignatureValidation($dataModel, $secretKey, $signature);
+    }
+
+    /**
+     * Checks whether the provided signature is correct or not for MyFatoorah Webhook
+     *
+     * @param array  $dataModel
+     * @param string $secretKey
+     * @param string $signature
+     *
+     * @return boolean
+     */
+    protected static function checkSignatureValidation($dataModel, $secretKey, $signature)
+    {
         $mapFun = function ($v, $k) {
             return sprintf("%s=%s", $k, $v);
         };
-        $outputArr = array_map($mapFun, $dataArray, array_keys($dataArray));
+        $outputArr = array_map($mapFun, $dataModel, array_keys($dataModel));
         $output    = implode(',', $outputArr);
 
         // generate hash of $field string
-        $hash = base64_encode(hash_hmac('sha256', $output, $secret, true));
+        $hash = base64_encode(hash_hmac('sha256', $output, $secretKey, true));
 
-        return $signature === $hash;
+        return hash_equals($hash, $signature);
+        //return $signature === $hash;
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -695,7 +749,7 @@ class MyFatoorahList extends MyFatoorah
 
     /**
      * Gets the rate of a given currency according to the default currency of the MyFatoorah portal account.
-     * 
+     *
      * @param string $currency The currency that will be converted into the currency of MyFatoorah portal account.
      * @param array  $allRates An array of MyFatoorah currencies and rates
      *
@@ -866,6 +920,13 @@ class MyFatoorahShipping extends MyFatoorah
      */
     public function calculateShippingCharge($curlData)
     {
+        if (!empty($curlData['Items'])) {
+            foreach ($curlData['Items'] as &$item) {
+                $item['ProductName'] = strip_tags($item['ProductName']);
+                $item['Description'] = strip_tags($item['Description']);
+            }
+        }
+
         $url  = "$this->apiURL/v2/CalculateShippingCharge";
         $json = $this->callAPI($url, $curlData, null, 'Calculate Shipping Charge');
         return $json->Data;
@@ -927,6 +988,7 @@ class MyFatoorahSupplier extends MyFatoorah
  */
 class MyFatoorahPayment extends MyFatoorah
 {
+    //-----------------------------------------------------------------------------------------------------------------------------------------
 
     /**
      * The file name used in caching the gateways data
@@ -1001,8 +1063,9 @@ class MyFatoorahPayment extends MyFatoorah
             $cachedGateways = $this->addGatewayToCheckout($gateway, $cachedGateways, $isApRegistered);
         }
 
+        //add only one ap/gp gateway
+        $cachedGateways['gp'] = $cachedGateways['gp'][0] ?? [];
         if ($isApRegistered) {
-            //add only one ap gateway
             $cachedGateways['ap'] = $cachedGateways['ap'][0] ?? [];
         }
 
@@ -1022,27 +1085,24 @@ class MyFatoorahPayment extends MyFatoorah
      */
     protected function addGatewayToCheckout($gateway, $checkoutGateways, $isApRegistered)
     {
+        $code = $gateway->PaymentMethodCode;
+        if ($gateway->IsEmbeddedSupported) {
+            $map = [
+                'stc' => 'cards',
+                'gp'  => 'gp',
+                'ap'  => ($isApRegistered) ? 'ap' : 'cards'
+            ];
 
-        if ($gateway->PaymentMethodCode == 'gp') {
-            $checkoutGateways['gp']    = $gateway;
-            $checkoutGateways['all'][] = $gateway;
-        } elseif ($gateway->PaymentMethodCode == 'ap') {
-            if ($isApRegistered) {
-                $checkoutGateways['ap'][] = $gateway;
-            } else {
-                $checkoutGateways['cards'][] = $gateway;
-            }
-            $checkoutGateways['all'][] = $gateway;
+            $index = $map[$code] ?? 'form';
+        } elseif ($gateway->IsDirectPayment) {
+            //don't add the $gateway if $gateway->IsEmbeddedSupported = false and $gateway->IsDirectPayment = true
+            return $checkoutGateways;
         } else {
-            if ($gateway->IsEmbeddedSupported) {
-                $checkoutGateways['form'][] = $gateway;
-                $checkoutGateways['all'][]  = $gateway;
-            } elseif (!$gateway->IsDirectPayment) {
-                $checkoutGateways['cards'][] = $gateway;
-                $checkoutGateways['all'][]   = $gateway;
-            }
+            $index = 'cards';
         }
 
+        $checkoutGateways[$index][] = $gateway;
+        $checkoutGateways['all'][]  = $gateway;
         return $checkoutGateways;
     }
 
@@ -1131,7 +1191,6 @@ class MyFatoorahPayment extends MyFatoorah
      */
     public function sendPayment($curlData)
     {
-
         $this->preparePayment($curlData);
 
         $json = $this->callAPI("$this->apiURL/v2/SendPayment", $curlData, $curlData['CustomerReference'], 'Send Payment');
@@ -1149,7 +1208,6 @@ class MyFatoorahPayment extends MyFatoorah
      */
     public function executePayment($curlData)
     {
-
         $this->preparePayment($curlData);
 
         $json = $this->callAPI("$this->apiURL/v2/ExecutePayment", $curlData, $curlData['CustomerReference'], 'Execute Payment');
@@ -1165,12 +1223,49 @@ class MyFatoorahPayment extends MyFatoorah
      */
     private function preparePayment(&$curlData)
     {
-
-        $curlData['CustomerReference'] = $curlData['CustomerReference'] ?? null;
+        $curlData['CustomerReference'] = $curlData['CustomerReference'] ?? null; //important to be set even with null and here
         $curlData['SourceInfo']        = $curlData['SourceInfo'] ?? 'MyFatoorah PHP Library ' . $this->version;
+
+        $this->prepareInvoiceInfo($curlData);
+        $this->prepareCustomerInfo($curlData);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Prepare Customer Info for SendPayment and ExecutePayment
+     *
+     * @param array $curlData Invoice information
+     */
+    private function prepareCustomerInfo(&$curlData)
+    {
+        if (!empty($curlData['CustomerName'])) {
+            $curlData['CustomerName'] = preg_replace('/[^\p{L}\p{N}\s]/u', '', $curlData['CustomerName']);
+        }
 
         if (empty($curlData['CustomerEmail'])) {
             $curlData['CustomerEmail'] = null;
+        }
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Prepare Invoice Info for SendPayment and ExecutePayment
+     *
+     * @param array $curlData Invoice information
+     */
+    private function prepareInvoiceInfo(&$curlData)
+    {
+        if (!empty($curlData['InvoiceItems'])) {
+            foreach ($curlData['InvoiceItems'] as &$item) {
+                $item['ItemName'] = strip_tags($item['ItemName']);
+            }
+        }
+        unset($item); //important to clear the ref
+
+        if (empty($curlData['ExpiryDate']) && !empty($curlData['ExpiryMinutes'])) {
+            $curlData['ExpiryDate'] = $this->getExpiryDate($curlData['ExpiryMinutes']);
         }
     }
 
@@ -1189,7 +1284,7 @@ class MyFatoorahPayment extends MyFatoorah
 
         $curlData = ['CustomerIdentifier' => $userDefinedField];
 
-        return $this->InitiateSession($curlData, $logId);
+        return $this->initiateSession($curlData, $logId);
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -1202,7 +1297,7 @@ class MyFatoorahPayment extends MyFatoorah
      *
      * @return object
      */
-    public function InitiateSession($curlData, $logId = null)
+    public function initiateSession($curlData, $logId = null)
     {
 
         $json = $this->callAPI("$this->apiURL/v2/InitiateSession", $curlData, $logId, 'Initiate Session');
@@ -1238,6 +1333,7 @@ class MyFatoorahPayment extends MyFatoorah
  */
 class MyFatoorahPaymentEmbedded extends MyFatoorahPayment
 {
+    //-----------------------------------------------------------------------------------------------------------------------------------------
 
     /**
      * The checkoutGateways array is used to display the payment in the checkout page.
@@ -1283,8 +1379,9 @@ class MyFatoorahPaymentEmbedded extends MyFatoorahPayment
             self::$checkoutGateways = $this->addGatewayToCheckout($gateway, self::$checkoutGateways, $isApRegistered);
         }
 
+        //add only one ap/gp gateway
+        self::$checkoutGateways['gp'] = $this->getOneEmbeddedGateway(self::$checkoutGateways['gp'], $currencyIso, $allRates);
         if ($isApRegistered) {
-            //add only one ap gateway
             self::$checkoutGateways['ap'] = $this->getOneEmbeddedGateway(self::$checkoutGateways['ap'], $currencyIso, $allRates);
         }
 
@@ -1295,11 +1392,11 @@ class MyFatoorahPaymentEmbedded extends MyFatoorahPayment
 
     /**
      * Calculate the amount value that will be paid in each payment method
-     * 
+     *
      * @param object $paymentMethod The payment method object obtained from the initiate payment endpoint
      * @param array  $allRates      The MyFatoorah currency rate array of all gateways.
      * @param double $currencyRate  The currency rate of the invoice.
-     * 
+     *
      * @return double
      */
     private function getPaymentTotalAmount($paymentMethod, $allRates, $currencyRate)
@@ -1328,10 +1425,10 @@ class MyFatoorahPaymentEmbedded extends MyFatoorahPayment
 
     /**
      * Returns the next highest float value by rounding up to a certain decimal
-     * 
+     *
      * @param mixed $number
      * @param mixed $decimalPlaces
-     * 
+     *
      * @return float
      */
     private function roundUp($number, $decimalPlaces)
@@ -1354,6 +1451,9 @@ class MyFatoorahPaymentEmbedded extends MyFatoorahPayment
      */
     private function getOneEmbeddedGateway($gateways, $displayCurrency, $allRates)
     {
+        if (count($gateways) == 1) {
+            return $gateways[0];
+        }
 
         $displayCurrencyIndex = array_search($displayCurrency, array_column($gateways, 'PaymentCurrencyIso'));
         if ($displayCurrencyIndex) {
@@ -1455,7 +1555,7 @@ class MyFatoorahPaymentStatus extends MyFatoorahPayment
             $data = self::getSuccessData($data);
             $this->log("$msgLog - Status is Paid");
         } elseif ($data->InvoiceStatus != 'Paid') {
-            $data = self::getErrorData($data, $keyId, $KeyType);
+            $data = $this->getErrorData($data, $keyId, $KeyType);
             $this->log("$msgLog - Status is " . $data->InvoiceStatus . '. Error is ' . $data->InvoiceError);
         }
 
@@ -1528,7 +1628,7 @@ class MyFatoorahPaymentStatus extends MyFatoorahPayment
      *
      * @return object
      */
-    private static function getErrorData($data, $keyId, $KeyType)
+    private function getErrorData($data, $keyId, $KeyType)
     {
 
         //------------------
@@ -1546,9 +1646,11 @@ class MyFatoorahPaymentStatus extends MyFatoorahPayment
         //------------------
         //case 2: payment is Expired
         //all myfatoorah gateway is set to Asia/Kuwait
+        $timeZone = $this->getVendorTimeZone();
+
         $ExpiryDateTime = $data->ExpiryDate . ' ' . $data->ExpiryTime;
-        $ExpiryDate     = new \DateTime($ExpiryDateTime, new \DateTimeZone('Asia/Kuwait'));
-        $currentDate    = new \DateTime('now', new \DateTimeZone('Asia/Kuwait'));
+        $ExpiryDate     = new \DateTime($ExpiryDateTime, new \DateTimeZone($timeZone));
+        $currentDate    = new \DateTime('now', new \DateTimeZone($timeZone));
 
         if ($ExpiryDate < $currentDate) {
             $data->InvoiceStatus = 'Expired';
@@ -1601,10 +1703,218 @@ class MyFatoorahPaymentStatus extends MyFatoorahPayment
 
         $usortFun = function ($a, $b) {
             return strtotime($a->TransactionDate) - strtotime($b->TransactionDate);
-        }; 
+        };
         usort($transactions, $usortFun);
 
         return end($transactions);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+}
+
+
+/**
+ *  MyFatoorahWebhook handles Webhook endpoints.
+ */
+class MyFatoorahWebhook extends MyFatoorah
+{
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+    public static function processWebhookRequest($secretKey, $logger = __DIR__ . '/myfatoorah_webhook.log'/* , $request = null */)
+    {
+        MyFatoorah::$loggerObj = $logger;
+        MyFatoorah::log('MyFatoorah WebHook New Request');
+
+        if (!$secretKey) {
+            $msg = 'Store needs to be configured.';
+            MyFatoorah::log($msg);
+            throw new Exception($msg);
+        }
+
+        list($mfVersion, $signature) = self::getMfHeaders();
+
+        //        if (!$request) {
+        $body = file_get_contents('php://input');
+        MyFatoorah::log('MyFatoorah WebHook Body: ' . $body);
+
+        $request = json_decode($body, true);
+        //        }
+
+        if (empty($request['Data'])) {
+            $msg = 'Wrong data.';
+            MyFatoorah::log($msg);
+            throw new Exception($msg);
+        }
+
+        if (self::{"checkSignatureValidation$mfVersion"}($request, $secretKey, $signature)) {
+            return $request;
+        }
+
+        $msg = 'Validation error.';
+        MyFatoorah::log($msg);
+        throw new Exception($msg);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the MyFatoorah signature and version
+     *
+     * @return array<string>
+     * @throws Exception if the header contains a wrong headers
+     */
+    protected static function getMfHeaders()
+    {
+        $apache  = (array) apache_request_headers();
+        $headers = array_change_key_case($apache);
+
+        if (empty($headers['myfatoorah-signature']) || empty($headers['myfatoorah-webhook-version'])) {
+            throw new Exception('Wrong request.');
+        }
+
+        $mfVersion = strtolower($headers['myfatoorah-webhook-version']);
+        if ($mfVersion != 'v1' && $mfVersion != 'v2') {
+            throw new Exception('Wrong version.');
+        }
+        return [$mfVersion, $headers['myfatoorah-signature']];
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Checks whether the provided signature is correct or not for MyFatoorah Webhook version 1
+     *
+     * @param array<mixed> $request
+     * @param string       $secretKey
+     * @param string       $signature
+     *
+     * @return boolean
+     *
+     * @throws Exception if something wrong in the request
+     */
+    protected static function checkSignatureValidationV1($request, $secretKey, $signature)
+    {
+        if (!isset($request['EventType']) || !isset($request['Event'])) {
+            throw new Exception('Worng event.');
+        }
+
+        return MyFatoorah::isSignatureValid($request['Data'], $secretKey, $signature, $request['EventType']);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Checks whether the provided signature is correct or not for MyFatoorah Webhook version 2
+     *
+     * @param array<mixed, mixed> $request
+     * @param string              $secretKey
+     * @param string              $signature
+     *
+     * @return boolean
+     *
+     * @throws Exception if something wrong in the request
+     */
+    protected static function checkSignatureValidationV2($request, $secretKey, $signature)
+    {
+        if (!isset($request['Event']['Code']) || !isset($request['Event']['Name'])) {
+            throw new Exception('Worng event.');
+        }
+
+        $dataModel = self::getV2DataModel($request['Event']['Code'], $request['Data']);
+        return self::checkSignatureValidation($dataModel, $secretKey, $signature);
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    /**
+     * Returns the correct data model of the event
+     *
+     * @param int                 $code The event code
+     * @param array<string,mixed> $data The event data
+     *
+     * @return array<string, mixed>
+     *
+     * @throws Exception if the event code is not correct
+     */
+    private static function getV2DataModel($code, $data)
+    {
+        $dataModels = [
+            //https://docs.myfatoorah.com/docs/webhook-v2-payment-status-data-model
+            //Invoice.Id=6409988,Invoice.Status=PAID,Transaction.Status=SUCCESS,Transaction.PaymentId=07076409988323998875,Invoice.ExternalIdentifier=asdqwd-f13sdf-fasjkz
+            1 => fn() => [
+        'Invoice.Id'                 => $data['Invoice']['Id'],
+        'Invoice.Status'             => $data['Invoice']['Status'],
+        'Transaction.Status'         => $data['Transaction']['Status'],
+        'Transaction.PaymentId'      => $data['Transaction']['PaymentId'],
+        'Invoice.ExternalIdentifier' => $data['Invoice']['ExternalIdentifier'],
+            ],
+            //https://docs.myfatoorah.com/docs/webhook-v2-refund-data-model
+            2 => fn() => [
+        'Refund.Id'                  => $data['Refund']['Id'],
+        'Refund.Status'              => $data['Refund']['Status'],
+        'Amount.ValueInBaseCurrency' => $data['Amount']['ValueInBaseCurrency'],
+        'ReferencedInvoice.Id'       => $data['ReferencedInvoice']['Id'],
+            ],
+            //https://docs.myfatoorah.com/docs/webhook-v2-balance-transferred-data-model
+            3 => fn() => [
+        'Deposit.Reference'            => $data['Deposit']['Reference'],
+        'Deposit.ValueInBaseCurrency'  => $data['Deposit']['ValueInBaseCurrency'],
+        'Deposit.NumberOfTransactions' => $data['Deposit']['NumberOfTransactions'],
+            ],
+            //https://docs.myfatoorah.com/docs/webhook-v2-supplier-data-model
+            4 => fn() => [
+        'Supplier.Code'      => $data['Supplier']['Code'],
+        'KycDecision.Status' => $data['KycDecision']['Status'],
+            ],
+            //https://docs.myfatoorah.com/docs/webhook-v2-recurring-data-model
+            5 => fn() => [
+        'Recurring.Id'               => $data['Recurring']['Id'],
+        'Recurring.Status'           => $data['Recurring']['Status'],
+        'Recurring.InitialInvoiceId' => $data['Recurring']['InitialInvoiceId'],
+            ]
+        ];
+
+        if (!isset($dataModels[$code])) {
+            throw new Exception('Worng event.');
+        }
+
+        return $dataModels[$code]();
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+
+    public static function checkforWebHook2ProcessMessage($webhook, $order)
+    {
+        //        if (strpos($order['myfatoorah_orderPM'], 'myfatoorah') === false) {
+        //            return('Wrong Payment Method.');
+        //        }
+
+        if ($order['myfatoorah_invoiceId'] != $webhook['Invoice']['Id']) {
+            return('Wrong invoice.');
+        }
+
+        //don't process because the Paid is a final status
+        if ($order['myfatoorah_status'] == 'Paid') {
+            return('Order already Paid');
+        }
+
+        //don't process for the same payment id and the status is not SUCCESS
+        if ($order['myfatoorah_paymentId'] == $webhook['Transaction']['PaymentId']) {
+            return "Transaction already {$webhook['Transaction']['Status']}.";
+        }
+
+        return false;
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+    public static function mapWebhook2Status($status)
+    {
+        $statuses = [
+            'SUCCESS'  => 'Paid',
+            'FAILED'   => 'Failed',
+            'CANCELED' => 'Expired',
+            'PENDING'  => 'Pending',
+        ];
+        return $statuses[$status] ?? null;
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------------------

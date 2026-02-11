@@ -1,10 +1,7 @@
 <?php
 
 class PluginShippingMyfatoorahWoocommerce {
-
 //-----------------------------------------------------------------------------------------------------------------------------------------
-
-    private $txtSelectCity;
 
     /**
      * Constructor
@@ -18,8 +15,6 @@ class PluginShippingMyfatoorahWoocommerce {
         //Those will be avalible when the shipping is enabled
         $shipOptions = get_option('woocommerce_myfatoorah_shipping_settings');
         if (isset($shipOptions['enabled']) && $shipOptions['enabled'] == 'yes') {
-
-            $this->txtSelectCity = __('Select Town / City', 'myfatoorah-woocommerce');
 
             add_action('wp_enqueue_scripts', [$this, 'wp_enqueue_scripts']);
             add_action('wp_ajax_get_cities', [$this, 'get_cities'], 1);
@@ -148,6 +143,10 @@ class PluginShippingMyfatoorahWoocommerce {
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------------------
+    private function getTxtSelectCity() {
+        return __('Select Town / City', 'myfatoorah-woocommerce');
+    }
+
     function check_cities_field() {
         $countryCode = MyFatoorah::filterInputField('country_code', 'POST');
         if (!$countryCode) {
@@ -164,7 +163,7 @@ class PluginShippingMyfatoorahWoocommerce {
         if (!empty($options['exe_ship_countries']) && (false !== array_search($countryCode, $options['exe_ship_countries']))) {
             die('input');
         } else {
-            die($this->txtSelectCity);
+            die($this->getTxtSelectCity());
         }
     }
 
@@ -191,7 +190,7 @@ class PluginShippingMyfatoorahWoocommerce {
                 $city = WC()->customer->$function();
                 return wp_parse_args(array('type' => 'select', 'options' => array($city => ucwords($city))), $field);
             } else {
-                return wp_parse_args(array('type' => 'select', 'options' => array('' => $this->txtSelectCity)), $field);
+                return wp_parse_args(array('type' => 'select', 'options' => array('' => $this->getTxtSelectCity())), $field);
             }
         }
     }

@@ -6,7 +6,6 @@ class PluginPaymentMyfatoorahWoocommerce {
 
     private $code;
     private $plugin;
-    private $txtOrderNotFound;
 
     /**
      * Constructor
@@ -15,8 +14,6 @@ class PluginPaymentMyfatoorahWoocommerce {
 
         $this->code   = $code;
         $this->plugin = $plugin;
-
-        $this->txtOrderNotFound = __('The Order is not found. Please, contact the store admin.', 'myfatoorah-woocommerce');
 
         //filters
         add_filter('woocommerce_payment_gateways', array($this, 'register'), 0);
@@ -94,23 +91,27 @@ class PluginPaymentMyfatoorahWoocommerce {
     }
 
     //-----------------------------------------------------------------------------------------------------------------------------
+    private function getTxtOrderNotFound() {
+        return __('The Order is not found. Please, contact the store admin.', 'myfatoorah-woocommerce');
+    }
+
     public function getPaymentStatus() {
 
-        $orderId       = base64_decode(MyFatoorah::filterInputField('oid'));
-        $order         = wc_get_order($orderId);
+        $orderId = base64_decode(MyFatoorah::filterInputField('oid'));
+        $order   = wc_get_order($orderId);
         if (!$order) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
-        
+
         $paymentMethod = $order->get_payment_method();
 
         //get Payment Id
         $KeyType = 'PaymentId';
-        $key     = preg_replace('/[^0-9]/', '', MyFatoorah::filterInputField('paymentId')); //To avoid other strings for app as example
+        $key     = preg_replace('/[^0-9]/', '', (string) MyFatoorah::filterInputField('paymentId')); //To avoid other strings for app as example
         if (!$key) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
-        
+
         $this->validateCallback($orderId, $key, $paymentMethod);
 
         //get MyFatoorah object
@@ -133,15 +134,15 @@ class PluginPaymentMyfatoorahWoocommerce {
     //-----------------------------------------------------------------------------------------------------------------------------------------
     public function validateCallback($orderId, $key, $paymentMethod) {
         if (!$orderId) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
 
         if (!$key) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
 
         if (!str_contains($paymentMethod, 'myfatoorah_')) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
     }
 
@@ -176,10 +177,10 @@ class PluginPaymentMyfatoorahWoocommerce {
     //-----------------------------------------------------------------------------------------------------------------------------------------
     public function initLoader() {
         $orderId   = MyFatoorah::filterInputField('oid');
-        $paymentId = preg_replace('/[^0-9]/', '', MyFatoorah::filterInputField('paymentId'));
+        $paymentId = preg_replace('/[^0-9]/', '', (string) MyFatoorah::filterInputField('paymentId'));
 
         if (!$orderId || !$paymentId) {
-            wp_die($this->txtOrderNotFound);
+            wp_die($this->getTxtOrderNotFound());
         }
 
         $args = [

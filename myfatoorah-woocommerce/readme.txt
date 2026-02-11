@@ -2,9 +2,9 @@
 Contributors: myfatoorah,  nermeenshoman, rashasaeed
 Tags: myfatoorah, my fatoorah, payment, woo, woo commerce
 Requires at least: 5.9
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.2.9
+Stable tag: 2.2.10
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -93,18 +93,18 @@ This option enables triggering events each time the order status changes at the 
 
 
 == Changelog ==
-= 2.2.9 (2025-12-17) =
-- Show the Apple Pay payment for the non-IOS systems
-- Add validation for the Shipping item names
-- Force new design view in upgrading and activation
-- Fix the notice that "Function _load_textdomain_just_in_time was called incorrectly"
-- Move the assets folder to the public folder
-- Move the templates folder inside the includes folder
-- Fix need_setup functionality to avoid unnecessary plugin deactivation
+= 2.2.10 (2025-02-11) =
+- Introduced support for Webhook v2
+- Added Webhook support for multi-vendor functionality
+- Updated the payment form to reflect total changes on the Blocks Checkout page
+- Added mfVersion to the Blocks Checkout page
+- Fixed the thousand separator display issue for the Apple Pay button in the Blocks Checkout page
+- Fix plugin loaded order
+- Sends expiry minutes to MyFatoorah to calculate the invoice expiration based on the vendor’s timezone
 
 See [changelog.txt](https://plugins.svn.wordpress.org/myfatoorah-woocommerce/trunk/changelog.txt) for older logs.
 
 
 == Upgrade Notice ==
-= 2.2.9 =
+= 2.2.10 =
 The old design and the MyFatoorah Embedded payment is deprecated and will be removed soon. Please, use MyFatoorah's new design ONLY.

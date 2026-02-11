@@ -12,8 +12,13 @@ class PluginWebhookMyfatoorahWoocommerce {
      */
     public function __construct() {
         add_action('woocommerce_api_myfatoorah_webhook', array($this, 'checkEventType'));
+
+        //v1
         add_action('myfatoorah_woocommerce_webhook_TransactionsStatusChanged', array($this, 'TransactionsStatusChanged'));
         add_action('myfatoorah_woocommerce_webhook_RefundStatusChanged', array($this, 'RefundStatusChanged'));
+
+        //v2
+        add_action('myfatoorah_woocommerce_webhook_PAYMENT_STATUS_CHANGED', array($this, 'PAYMENT_STATUS_CHANGED'));
 
         $this->logger = WC_LOG_DIR . 'myfatoorah_webhook.log';
     }
@@ -21,60 +26,91 @@ class PluginWebhookMyfatoorahWoocommerce {
 //-----------------------------------------------------------------------------------------------------------------------------
 
     function checkEventType() {
-        MyFatoorah::$loggerObj = $this->logger;
-        MyFatoorah::log('MyFatoorah WebHook New Request');
-
         $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
-        $secretKey = empty($v2Options['webhookSecretKey']) ? die : $v2Options['webhookSecretKey'];
+        $secretKey = $v2Options['webhookSecretKey'] ?? null;
 
-        $apache      = apache_request_headers();
-        $headers     = array_change_key_case($apache);
-        $mfSignature = empty($headers['myfatoorah-signature']) ? die : $headers['myfatoorah-signature'];
-
-        $body = file_get_contents('php://input');
-        MyFatoorah::log('MyFatoorah WebHook Body: ' . $body);
-
-        $webhook   = json_decode($body, true);
-        $eventType = (isset($webhook['EventType']) && isset($webhook['Event'])) ? $webhook['EventType'] : die;
-        $data      = (empty($webhook['Data'])) ? die : $webhook['Data'];
-
-        if (MyFatoorah::isSignatureValid($data, $secretKey, $mfSignature, $eventType)) {
-            do_action('myfatoorah_woocommerce_webhook_' . $webhook['Event'], $data);
+        try {
+            $request = MyFatoorahWebhook::processWebhookRequest($secretKey, $this->logger);
+        } catch (Exception $ex) {
+            die($ex->getMessage());
         }
+
+
+        if (is_string($request['Event'])) {
+            do_action('myfatoorah_woocommerce_webhook_' . $request['Event'], $request['Data']);
+        } else if ($request['Event']['Code'] == 1) {
+            do_action('myfatoorah_woocommerce_webhook_PAYMENT_STATUS_CHANGED', $request['Data']);
+        } else if ($request['Event']['Code'] == 2) {
+            $data = [
+                'InvoiceId'       => $request['Data']['ReferencedInvoice']['Id'],
+                'RefundId'        => $request['Data']['Refund']['Id'],
+                'RefundStatus'    => $request['Data']['Refund']['Status'],
+                'RefundReference' => $request['Data']['Refund']['Reference'],
+                'Amount'          => $request['Data']['Amount']['ValueInBaseCurrency'],
+                'CreatedDate'     => $request['Data']['Refund']['CreationDate'],
+                'Comments'        => $request['Data']['Refund']['Comment'],
+                'version'         => 'v2',
+            ];
+            do_action('myfatoorah_woocommerce_webhook_RefundStatusChanged', $data);
+        }
+        die('Done');
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
     function TransactionsStatusChanged($data) {
+        $orderId       = $data['CustomerReference'];
+        $paymentId     = $data['PaymentId'];
+        $paymentStatus = $data['TransactionStatus'];
+        $this->processWebhook($orderId, $paymentId, $paymentStatus, $data);
+    }
 
-        //to allow the callback code run 1st
-        sleep(5);
+    function PAYMENT_STATUS_CHANGED($data) {
+        $data['Transaction']['Status'] = MyFatoorahWebhook::mapWebhook2Status($data['Transaction']['Status']);
 
-        $orderId = $data['CustomerReference'];
-        $order   = new WC_Order($orderId); //todo switch to wc_get_order
+        $orderId       = $data['Invoice']['ExternalIdentifier'];
+        $paymentId     = $data['Transaction']['PaymentId'];
+        $paymentStatus = $data['Transaction']['Status'];
+        $this->processWebhook($orderId, $paymentId, $paymentStatus, $data, 2);
+    }
 
-        $orderPaymentId = $order->get_meta('PaymentId', true);
-        if ($orderPaymentId == $data['PaymentId']) {
-            die;
+    function processWebhook($orderId, $paymentId, $paymentStatus, $data, $version = 1) {
+        $order = wc_get_order($orderId);
+        if (!$order) {
+            die('Order not found.');
         }
 
         $paymentMethod = $order->get_payment_method();
         if (!str_contains($paymentMethod, 'myfatoorah_')) {
-            die;
+            die('Wrong Payment Method.');
         }
 
-        $calss   = 'WC_Gateway_' . ucfirst($paymentMethod);
-        $gateway = new $calss;
+        //don't process because the Paid is a final status
+        if ($order->get_meta('myfatoorah_status', true) == 'Paid') {
+            die('Order already Paid');
+        }
 
+        //don't process for the same payment id and the status is not SUCCESS
+        if ($order->get_meta('PaymentId', true) == $paymentId) {
+            die("Transaction already $paymentStatus.");
+        }
+
+        $class   = 'WC_Gateway_' . ucfirst($paymentMethod);
+        $gateway = new $class;
         try {
-            $gateway->checkStatus($data['InvoiceId'], 'InvoiceId', $order, ' - WebHook');
+            if ($version == 1) {
+                $gateway->checkStatus($data['InvoiceId'], 'InvoiceId', $order, ' - WebHook');
+            } else {
+                $this->checkStatusWebhook2($data, $order, $gateway->orderStatus);
+            }
+
             $msg = 'Status: ' . $order->get_status();
         } catch (Exception $ex) {
             $msg = 'Error: ' . $ex->getMessage();
         }
-
         MyFatoorah::$loggerObj = $this->logger;
         MyFatoorah::log("MyFatoorah WebHook TransactionsStatusChanged: Order #$orderId ----- $msg");
+        die($msg);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -96,27 +132,39 @@ class PluginWebhookMyfatoorahWoocommerce {
             'meta_key'   => 'InvoiceId', // The postmeta key field
             'meta_value' => $data['InvoiceId'], // The comparison argument
         ));
-        $order     = $orderList[0] ?? die;
+        $order     = $orderList[0] ?? die('no order');
         $orderId   = $order->get_id();
 
         //check order status
         $status = $order->get_status();
         if ($status != 'processing' && $status != 'completed') {
-            MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: Order #$orderId ----- Can't complete the refund because the order status is $status");
-            die;
+            $msg = "Order #$orderId ----- Can't complete the refund because the order status is $status";
+            MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: $msg");
+            die($msg);
         }
 
         //get RefundStatus array
-        $refundData = $order->get_meta('RefundData', true) ?: die;
-        $refundObj  = $refundData[$data['RefundId']] ?? die;
+        $refundData = $order->get_meta('RefundData', true) ?: die('no refund data');
+        $refundObj  = $refundData[$data['RefundId']] ?? die('no refun object');
+
+        $isRefundProcessed = $order->get_meta('refund_processed_' . $data['RefundId'], false);
+        if ($isRefundProcessed) {
+            $msg = "Order #$orderId ----- This Refund Id " . $data['RefundId'] . ' is marked as Processed already';
+            MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: $msg");
+            die($msg);
+        }
+        //Mark as processed to prevent repeated refunds
+        $order->update_meta_data('refund_processed_' . $data['RefundId'], true);
+        $order->save(); // 🔥 save هنا
 
         $displayAmount   = $refundObj->DisplayAmount;
         $displayCurrency = $refundObj->DisplayCurrency;
 
         $orderCurrency = $order->get_currency();
         if ($displayCurrency != $orderCurrency) {
-            MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: Order #$orderId ----- Can't complete the refund because the refund currency status is $displayCurrency and the order currency is $orderCurrency");
-            die;
+            $msg = "Order #$orderId ----- Can't complete the refund because the refund currency status is $displayCurrency and the order currency is $orderCurrency";
+            MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: $msg");
+            die($msg);
         }
 
         $noteTitle = '<b>MyFatoorah Refund Details:</b><br>';
@@ -145,7 +193,7 @@ class PluginWebhookMyfatoorahWoocommerce {
         $note .= 'RefundId: ' . $data['RefundId'] . '<br>';
         $note .= 'RefundReference: ' . $data['RefundReference'] . '<br>';
 
-        $createdDate = DateTime::createFromFormat('dmYHis', $data['CreatedDate']);
+        $createdDate = isset($data['version']) ? new DateTime($data['CreatedDate']) : DateTime::createFromFormat('dmYHis', $data['CreatedDate']);
         $note        .= 'CreatedDate: ' . date_format($createdDate, 'Y-m-d H:i:s') . '<br>';
 
         $baseCurrency = $order->get_meta('InvoiceBaseCurrency', true) ?: '';
@@ -156,7 +204,75 @@ class PluginWebhookMyfatoorahWoocommerce {
 
         $order->add_order_note($note);
 
-        MyFatoorah::log("MyFatoorah WebHook RefundStatusChanged: Order #$orderId ----- Status is " . $data['RefundStatus'] . ' for RefundId: ' . $data['RefundId']);
+        $msg = "MyFatoorah WebHook RefundStatusChanged: Order #$orderId ----- Status is " . $data['RefundStatus'] . ' for RefundId: ' . $data['RefundId'];
+
+        MyFatoorah::$loggerObj = $this->logger;
+        MyFatoorah::log($msg);
+        echo($msg);
+    }
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+
+    public function checkStatusWebhook2($data, $order, $configStatus) {
+
+        //update meta data
+        $this->updatePostMetaWebhook2($order, $data);
+
+        //add notes
+        $this->addOrderNoteWebhook2($order, $data);
+
+        //update status
+        $wooStatus = ($data['Invoice']['Status'] == 'PAID') ? $configStatus : 'failed';
+        $order->update_status($wooStatus, "<b>MyFatoorah Webhook:</b><br/>", true);
+
+        $order->set_transaction_id($data['Transaction']['PaymentId']);
+
+        //Calling the save() method is a relatively expensive operation, so you may wish to avoid calling it more times than necessary (for example, if you know it will be called later in the same flow, you may wish to avoid additional earlier calls when operating on the same object).
+        $order->save();
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------
+
+    public function updatePostMetaWebhook2(&$order, $data) {
+        $order->update_meta_data('InvoiceId', $data['Invoice']['Id']);
+        $order->update_meta_data('InvoiceReference', $data['Invoice']['Reference']);
+        $order->update_meta_data('InvoiceDisplayCurrencyValue', $data['Amount']['ValueInDisplayCurrency'] . ' ' . $data['Amount']['DisplayCurrency']);
+        $order->update_meta_data('InvoiceBaseValue', $data['Amount']['ValueInBaseCurrency']);
+
+        //focusTransaction
+        $order->update_meta_data('InvoiceBaseCurrency', $data['Amount']['BaseCurrency']);
+        $order->update_meta_data('PaymentGateway', $data['Transaction']['PaymentMethod']);
+        $order->update_meta_data('PaymentId', $data['Transaction']['PaymentId']);
+        $order->update_meta_data('ReferenceId', $data['Transaction']['ReferenceId']);
+        $order->update_meta_data('TransactionId', $data['Transaction']['Id']);
+
+        $order->update_meta_data('myfatoorah_status', $data['Transaction']['Status']);
+    }
+
+//-----------------------------------------------------------------------------------------------------------------------------
+
+    public function addOrderNoteWebhook2(&$order, $data) {
+        $note = "<b>MyFatoorah Webhook Payment Details:</b><br>";
+
+        $note .= 'InvoiceStatus: ' . $data['Transaction']['Status'] . '<br>';
+        if ($data['Transaction']['Status'] !== 'Paid') {
+            $note .= 'InvoiceError: ' . $data['Transaction']['Error']['Message'] . '<br>';
+        }
+
+        $note .= 'InvoiceId: ' . $data['Invoice']['Id'] . '<br>';
+        $note .= 'InvoiceReference: ' . $data['Invoice']['Reference'] . '<br>';
+        $note .= 'InvoiceDisplayValue: ' . $data['Amount']['ValueInDisplayCurrency'] . ' ' . $data['Amount']['DisplayCurrency'] . '<br>';
+        $note .= 'InvoiceBaseValue: ' . $data['Amount']['ValueInBaseCurrency'] . '<br>';
+
+        //focusTransaction
+        $note .= 'InvoiceBaseCurrency: ' . $data['Amount']['BaseCurrency'] . '<br>';
+        $note .= 'PaymentGateway: ' . $data['Transaction']['PaymentMethod'] . '<br>';
+        $note .= 'PaymentId: ' . $data['Transaction']['PaymentId'] . '<br>';
+        $note .= 'ReferenceId: ' . $data['Transaction']['ReferenceId'] . '<br>';
+        $note .= 'TransactionId: ' . $data['Transaction']['Id'] . '<br>';
+
+        $order->add_order_note($note);
     }
 
 //-----------------------------------------------------------------------------------------------------------------------------

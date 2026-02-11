@@ -2,6 +2,15 @@
 
 This file will contains only old changelog. See readme.txt for newer versions.
 
+= 2.2.9 (2025-12-17) =
+- Show the Apple Pay payment for the non-IOS systems
+- Add validation for the Shipping item names
+- Force new design view in upgrading and activation
+- Fix the notice that "Function _load_textdomain_just_in_time was called incorrectly"
+- Move the assets folder to the public folder
+- Move the templates folder inside the includes folder
+- Fix need_setup functionality to avoid unnecessary plugin deactivation
+
 = 2.2.8 (2024-07-14) =
 - Add the WordPress block compatibility
 - Fix the Embedded currency 

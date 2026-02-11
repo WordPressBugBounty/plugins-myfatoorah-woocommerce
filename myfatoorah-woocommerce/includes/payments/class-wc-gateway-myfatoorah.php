@@ -29,7 +29,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
     public $listOptions, $newDesign, $registerApplePay;
     public $designFont, $designFontSize, $designColor, $themeColor, $cardIcons;
     //Settings Titles
-    public $frontend, $design, $theme, $resetTheme, $configuration, $options;
+    public $frontend, $theme, $resetTheme, $configuration, $options;
 
     /**
      * Constructor for your payment class
@@ -52,9 +52,10 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
         $this->init_settings();
 
         //for example: enabled, title, description, countryMode, testMode, apiKey, listOptions, orderStatus, success_url, fail_url, debug, icon, 
-        foreach ($this->settings as $key => $val) {
-            $this->$key = $val;
-        }
+//        foreach ($this->settings as $key => $val) {
+////            $this->$key = $val;
+//            var_dump($key, $val, '<br>');
+//        }
 
         $this->init_myfatoorah_options();
 
@@ -69,6 +70,7 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             }
         } else {
             $countries = [];
+            //$this->mfCountries = []; //to do
         }
 
         $this->myFatoorahConfig = [
@@ -95,15 +97,17 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
     function init_myfatoorah_options() {
 
         //if (empty($this->apiKey)) {
-        $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
+        $options = get_option('woocommerce_' . $this->id . '_settings');
 
         /* payment info */
-        //$this->enabled     = !empty($v2Options['enabled']) ? trim($v2Options['enabled']) : '';
-        //$this->title       = !empty($v2Options['title']) ? trim($v2Options['title']) : '';
-        //$this->description = !empty($v2Options['description']) ? trim($v2Options['description']) : '';
-        //$this->icon        = !empty($v2Options['icon']) ? trim($v2Options['icon']) : '';
+        $this->enabled     = !empty($options['enabled']) ? trim($options['enabled']) : '';
+        $this->title       = !empty($options['title']) ? trim($options['title']) : '';
+        $this->description = !empty($options['description']) ? trim($options['description']) : '';
+        $this->icon        = !empty($options['icon']) ? trim($options['icon']) : '';
 
         /* myfatoorah info */
+        $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
+
         $this->apiKey      = !empty($v2Options['apiKey']) ? trim($v2Options['apiKey']) : '';
         $this->countryMode = !empty($v2Options['countryMode']) ? $v2Options['countryMode'] : 'KWT';
         $this->testMode    = !empty($v2Options['testMode']) ? $v2Options['testMode'] : 'no';
@@ -227,21 +231,8 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         $userDefinedField = ($this->saveCard == 'yes' && get_current_user_id()) ? 'CK-' . get_current_user_id() : '';
 
-        //get $expiryDate
-        $expiryDate = '';
-        if (class_exists('WC_Admin_Settings')) {
-
-            $woocommerce_hold_stock_minutes = get_option('woocommerce_hold_stock_minutes');
-            if ($woocommerce_hold_stock_minutes) {
-
-                $date        = new DateTime('now', new DateTimeZone('Asia/Kuwait'));
-                $currentDate = $date->format('Y-m-d\TH:i:s');
-
-                $expires    = strtotime("$currentDate + $woocommerce_hold_stock_minutes minutes");
-                $expiryDate = date('Y-m-d\TH:i:s', $expires);
-            }
-        }
-
+        //get $expiryMinutes
+        $expiryMinutes = class_exists('WC_Admin_Settings') ? get_option('woocommerce_hold_stock_minutes') : null;
 
         //callback url
         $args = [
@@ -338,13 +329,14 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
             'CustomerReference'  => $orderId,
             'CustomerCivilId'    => $civilId,
             'UserDefinedField'   => $userDefinedField,
-            'ExpiryDate'         => $expiryDate,
+            'ExpiryMinutes'      => $expiryMinutes,
             'SourceInfo'         => 'WooCommerce ' . WC_VERSION . ' - ' . $this->id . ' ' . MYFATOORAH_WOO_PLUGIN_VERSION . $design,
             'CustomerAddress'    => $customerAddress,
             'ShippingConsignee'  => ($shipingMethod) ? $shippingConsignee : null,
             'ShippingMethod'     => $shipingMethod,
             'InvoiceItems'       => $invoiceItems,
             'Suppliers'          => $this->getSupplierInfo($amount),
+            'WebhookUrl'         => empty($this->supplierCode) ? null : home_url() . '?wc-api=myfatoorah_webhook'
         ];
     }
 
@@ -780,11 +772,11 @@ class WC_Gateway_Myfatoorah extends WC_Payment_Gateway {
 
         $v2Options = get_option('woocommerce_myfatoorah_v2_settings');
 
-        $istest  = isset($v2Options['testMode']) && $v2Options['testMode'] == 'yes';
-        $country = empty($v2Options['countryMode']) ? 'KWT' : $v2Options['countryMode'];
+        $isTest = isset($v2Options['testMode']) && $v2Options['testMode'] == 'yes';
+        $vcCode = empty($v2Options['countryMode']) ? 'KWT' : $v2Options['countryMode'];
 
         $countries = MyFatoorah::getMFCountries();
-        $domain    = ($istest) ? $countries[$country]['testPortal'] : $countries[$country]['portal'];
+        $domain    = ($isTest) ? $countries[$vcCode]['testPortal'] : $countries[$vcCode]['portal'];
 
         wp_enqueue_script('myfatoorah-cardview', "$domain/cardview/v2/session.js", [], MYFATOORAH_WOO_PLUGIN_VERSION, false);
 

@@ -1,14 +1,14 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: MyFatoorah - WooCommerce 2.2.9\n"
+"Project-Id-Version: MyFatoorah - WooCommerce 2.2.10\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/myfatoorah-woocommerce\n"
 "Last-Translator: MyFatoorah Plugins Support <tech@myfatoorah.com>\n"
 "Language-Team: MyFatoorah Plugins Support <tech@myfatoorah.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2024-12-25T06:11:20+00:00\n"
-"PO-Revision-Date: 2024-12-25 08:15+0200\n"
+"POT-Creation-Date: 2026-01-27T12:25:38+00:00\n"
+"PO-Revision-Date: 2026-01-27 14:34+0200\n"
 "Language: ar\n"
 "X-Generator: Poedit 3.0.1\n"
 "X-Domain: myfatoorah-woocommerce\n"
@@ -293,8 +293,8 @@ msgstr "لون الخط"
 msgid "Theme Color"
 msgstr "لون العرض"
 
-#: includes/payments/blocks/MyFatoorahV2.php:77
-#: includes/payments/class-wc-gateway-myfatoorah.php:632
+#: includes/payments/blocks/MyFatoorahV2.php:78
+#: includes/payments/class-wc-gateway-myfatoorah.php:645
 msgid "MyFatoorah forces SSL checkout Payment. Your checkout is not secure! Please, contact the site admin to enable SSL and ensure that the server has a valid SSL certificate."
 msgstr "ماي فاتورة تفرض دفع SSL . عمليات الدفع الخاص بك غير آمنة! يرجى الاتصال بمسؤول الموقع لتفعيل SSL و التأكد من أن الخادم لديه شهادة SSL صالحة."
 
@@ -352,38 +352,38 @@ msgstr "كود المورد غير نشط في حساب البائع في ماي
 msgid "There are no payment methods available on your account, please contact your account manager."
 msgstr "عذرا: لا توجد أي بوابات دفع في حسابك. تواصل مع مدير الحساب الخاص بك."
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:153
+#: includes/payments/class-wc-gateway-myfatoorah.php:158
 msgid "please, refund manually for this order"
 msgstr "الرجاء رد الأموال يدويًا لهذا الطلب"
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:158
+#: includes/payments/class-wc-gateway-myfatoorah.php:163
 msgid "system can't refund order with status "
 msgstr "لا يمكن استرداد الطلب مع الحالة "
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:277
+#: includes/payments/class-wc-gateway-myfatoorah.php:286
 msgid "Total amount for order #"
 msgstr "المجموع الكلي للطلب #"
 
 #. translators: %s: the product name
-#: includes/payments/class-wc-gateway-myfatoorah.php:384
+#: includes/payments/class-wc-gateway-myfatoorah.php:394
 msgid "The \"%s\" Item has non number unit price."
 msgstr "سعر المنتج \"%s\" غير رقمي."
 
 #. translators: %s: Payment Code
-#: includes/payments/class-wc-gateway-myfatoorah.php:660
+#: includes/payments/class-wc-gateway-myfatoorah.php:673
 msgid "MyFatoorah %s has been disabled."
 msgstr "تم إيقاف طريقة ماي فاتورة للدفع %s."
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:669
-#: includes/payments/class-wc-gateway-myfatoorah.php:696
+#: includes/payments/class-wc-gateway-myfatoorah.php:682
+#: includes/payments/class-wc-gateway-myfatoorah.php:709
 msgid "MyFatoorah Shipping has been disabled."
 msgstr "تم إيقاف ماي فاتورة للشحن."
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:707
+#: includes/payments/class-wc-gateway-myfatoorah.php:720
 msgid "Copy this link to your MyFatoorah Account. After that, Copy your Webhook Secret Key from MyFatoorah Account in the above field."
 msgstr "الرجاء نسخ الرابط أعلاه ولصقة في حساب ماي فاتورة. بعد ذلك نسخ مفتاح الويب هوك السري من حساب ماي فاتورة في الحقل أعلاه."
 
-#: includes/payments/class-wc-gateway-myfatoorah.php:719
+#: includes/payments/class-wc-gateway-myfatoorah.php:732
 msgid "You should add the API key in the \"MyFatoorah - Cards\" payment Settings first."
 msgstr "يجب أولاً إضافة رمز التكامل في إعدادات الدفع \"ماي فاتورة - البطاقات\"."
 
@@ -511,19 +511,19 @@ msgstr "موافق"
 msgid "No"
 msgstr "غير موافق"
 
-#: myfatoorah-woocommerce.php:110
+#: myfatoorah-woocommerce.php:114
 msgid "View MyFatoorah documentation"
 msgstr "عرض وثائق ماي فاتورة"
 
-#: myfatoorah-woocommerce.php:111
+#: myfatoorah-woocommerce.php:115
 msgid "View MyFatoorah API docs"
 msgstr "عرض وثائق التكامل بماي فاتورة"
 
-#: myfatoorah-woocommerce.php:112
+#: myfatoorah-woocommerce.php:116
 msgid "Visit premium customer support"
 msgstr "قم بالاتصال بقسم الدعم الفني"
 
-#: myfatoorah-woocommerce.php:204
+#: myfatoorah-woocommerce.php:208
 msgid "MyFatoorah - WooCommerce plugin needs WooCommerce plugin to be installed and active."
 msgstr "يجب تفعيل إضافة الووكومرس أولا لتفعيل إضافة ماي فاتورة."
 

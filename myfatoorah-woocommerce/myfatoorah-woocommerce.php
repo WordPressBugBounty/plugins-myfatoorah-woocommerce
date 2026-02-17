@@ -9,7 +9,7 @@
  * Plugin Name:       MyFatoorah - WooCommerce
  * Plugin URI:        https://myfatoorah.readme.io/docs/woocommerce/
  * Description:       MyFatoorah Payment Gateway for WooCommerce. Integrated with MyFatoorah DHL/Aramex Shipping Methods.
- * Version:           2.2.10
+ * Version:           2.2.11
  * Author:            MyFatoorah
  * Author URI:        https://www.myfatoorah.com/
  * License:           GNU General Public License v3.0
@@ -38,7 +38,7 @@ use Automattic\WooCommerce\Blocks\Payments\PaymentMethodRegistry;
 use MyFatoorah\WooCommerce\Payments\Blocks\MyFatoorahV2;
 
 //MFWOO_PLUGIN
-define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.10');
+define('MYFATOORAH_WOO_PLUGIN_VERSION', '2.2.11');
 define('MYFATOORAH_WOO_PLUGIN', plugin_basename(__FILE__));
 define('MYFATOORAH_WOO_PLUGIN_NAME', dirname(MYFATOORAH_WOO_PLUGIN));
 define('MYFATOORAH_WOO_PLUGIN_PATH', plugin_dir_path(__FILE__));

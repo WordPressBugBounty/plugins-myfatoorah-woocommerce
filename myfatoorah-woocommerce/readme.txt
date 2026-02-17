@@ -4,7 +4,7 @@ Tags: myfatoorah, my fatoorah, payment, woo, woo commerce
 Requires at least: 5.9
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 2.2.10
+Stable tag: 2.2.11
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -93,18 +93,12 @@ This option enables triggering events each time the order status changes at the 
 
 
 == Changelog ==
-= 2.2.10 (2025-02-11) =
-- Introduced support for Webhook v2
-- Added Webhook support for multi-vendor functionality
-- Updated the payment form to reflect total changes on the Blocks Checkout page
-- Added mfVersion to the Blocks Checkout page
-- Fixed the thousand separator display issue for the Apple Pay button in the Blocks Checkout page
-- Fix plugin loaded order
-- Sends expiry minutes to MyFatoorah to calculate the invoice expiration based on the vendor’s timezone
+= 2.2.11 (2025-02-17) =
+- Align payment flow with WooCommerce Blocks lifecycle
 
 See [changelog.txt](https://plugins.svn.wordpress.org/myfatoorah-woocommerce/trunk/changelog.txt) for older logs.
 
 
 == Upgrade Notice ==
-= 2.2.10 =
+= 2.2.11 =
 The old design and the MyFatoorah Embedded payment is deprecated and will be removed soon. Please, use MyFatoorah's new design ONLY.
